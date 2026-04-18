@@ -1,17 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, Search, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
-import api from '../lib/api';
+import { Calendar, MapPin, Users, Search, ChevronRight, CheckCircle2, Clock, AlertTriangle, X } from 'lucide-react';
+import api, { eventApi, eventFraudApi } from '../lib/api';
 
 type EventType = 'all' | 'technology' | 'leadership' | 'networking' | 'design';
+type ViewMode = 'explore' | 'my-events' | 'my-bookings';
 
 export default function Events() {
   const [activeTab, setActiveTab] = useState<EventType>('all');
+  const [viewMode, setViewMode] = useState<ViewMode>('explore');
   const [search, setSearch] = useState('');
   const [events, setEvents] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  
+  // Fraud Report State
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportingEventId, setReportingEventId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportSuccess, setReportSuccess] = useState('');
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (viewMode === 'explore') fetchEvents();
+    else if (viewMode === 'my-bookings') fetchMyBookings();
+    else if (viewMode === 'my-events') fetchEvents(); // simplified
+  }, [viewMode]);
 
   const fetchEvents = async () => {
     try {
@@ -28,6 +40,40 @@ export default function Events() {
       })));
     } catch (err) {
       console.error('Failed to fetch events', err);
+    }
+  };
+
+  const fetchMyBookings = async () => {
+    try {
+      const data = await eventApi.getMyBookings();
+      setBookings(data.map((b: any) => ({
+        ...b,
+        event: {
+          ...b.event,
+          date: new Date(b.event.schedule).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: new Date(b.event.schedule).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+          mode: b.event.mode.charAt(0).toUpperCase() + b.event.mode.slice(1),
+          type: b.event.category?.toLowerCase() || 'technology',
+          location: b.event.venue || b.event.onlinePlatform || 'TBA',
+        }
+      })));
+    } catch (err) {
+      console.error('Failed to fetch bookings', err);
+    }
+  };
+
+  const submitFraudReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportingEventId) return;
+    try {
+      await eventFraudApi.reportFraud(reportingEventId, { reason: reportReason, details: reportDetails });
+      setReportSuccess('Issue reported successfully. Escrow payout has been frozen pending review.');
+      setTimeout(() => {
+        setReportModalOpen(false);
+        setReportSuccess('');
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to report fraud', err);
     }
   };
 
@@ -60,11 +106,16 @@ export default function Events() {
           />
         </div>
         <div className="flex items-center gap-2 bg-[#f2f4f6] rounded-xl p-1">
-          {(['Upcoming', 'Past Events', 'My Events']).map((t, i) => (
-            <button key={t} className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${i === 0 ? 'bg-white text-[#0A1628] shadow-sm' : 'text-[#75777d] hover:text-[#191c1e]'}`}>
-              {t}
-            </button>
-          ))}
+          <button 
+            onClick={() => setViewMode('explore')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'explore' ? 'bg-white text-[#0A1628] shadow-sm' : 'text-[#75777d] hover:text-[#191c1e]'}`}>
+            Explore
+          </button>
+          <button 
+            onClick={() => setViewMode('my-bookings')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'my-bookings' ? 'bg-white text-[#0A1628] shadow-sm' : 'text-[#75777d] hover:text-[#191c1e]'}`}>
+            My Bookings
+          </button>
         </div>
       </div>
 
@@ -90,55 +141,159 @@ export default function Events() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filteredEvents.map((e) => (
-          <div key={e.id} className="bg-white rounded-2xl border border-[#e0e3e5] overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col md:flex-row">
-            <div className={`md:w-1/3 bg-[#f7f9fb] flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[#f2f4f6] relative`}>
-              <div className="w-12 h-12 rounded-2xl bg-[#0A1628] flex items-center justify-center text-white mb-3 shadow-lg group-hover:bg-[#2563EB] transition-colors">
-                <Calendar size={24} />
+      {viewMode === 'explore' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredEvents.map((e) => (
+            <div key={e.id} className="bg-white rounded-2xl border border-[#e0e3e5] overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col md:flex-row">
+              <div className={`md:w-1/3 bg-[#f7f9fb] flex flex-col items-center justify-center p-6 border-b md:border-b-0 md:border-r border-[#f2f4f6] relative`}>
+                <div className="w-12 h-12 rounded-2xl bg-[#0A1628] flex items-center justify-center text-white mb-3 shadow-lg group-hover:bg-[#2563EB] transition-colors">
+                  <Calendar size={24} />
+                </div>
+                <p className="text-sm font-bold text-[#0A1628] text-center">{e.date}</p>
+                <p className="text-[10px] text-[#75777d] mt-1 shrink-0">{e.mode}</p>
+                <div className="absolute top-4 right-4 text-[#2563EB]">
+                  {e.verified && <CheckCircle2 size={16} fill="currentColor" className="fill-[#2563EB]/10" />}
+                </div>
               </div>
-              <p className="text-sm font-bold text-[#0A1628] text-center">{e.date}</p>
-              <p className="text-[10px] text-[#75777d] mt-1 shrink-0">{e.mode}</p>
-              <div className="absolute top-4 right-4 text-[#2563EB]">
-                {e.verified && <CheckCircle2 size={16} fill="currentColor" className="fill-[#2563EB]/10" />}
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                    e.mode === 'Virtual' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {e.mode === 'Virtual' ? 'Virtual' : 'In-Person'}
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                    {e.type}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-[#0A1628] group-hover:text-[#2563EB] transition-colors line-clamp-1">{e.title}</h3>
+                <p className="text-xs text-[#75777d] mt-2 line-clamp-2 leading-relaxed">{e.description}</p>
+                
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-[10px] text-[#45474c] font-medium">
+                    <MapPin size={12} className="text-[#c5c6cd]" /> {e.location}
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-4 border-t border-[#f2f4f6]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-[10px] text-[#45474c] font-bold">
+                        <Users size={12} className="text-[#c5c6cd]" /> {e.attendees.toLocaleString()}
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-[#45474c] font-bold">
+                        <Clock size={12} className="text-[#c5c6cd]" /> {e.time.split(' ')[0]}
+                      </div>
+                    </div>
+                    <button className="text-[10px] font-black text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      {new Date(e.schedule) > new Date() ? 'Register Now' : 'View Details'} <ChevronRight size={12} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="p-6 flex-1 flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                  e.mode === 'Virtual' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {e.mode === 'Virtual' ? 'Virtual' : 'In-Person'}
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                  {e.type}
-                </span>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {bookings.map(b => (
+            <div key={b.id} className="bg-white rounded-2xl border border-[#e0e3e5] p-6 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div>
+                <h3 className="text-lg font-bold text-[#0A1628]">{b.event.title}</h3>
+                <p className="text-sm text-[#75777d] mt-1">{b.event.date} • {b.event.time}</p>
+                
+                <div className="mt-3 flex items-center gap-2">
+                  {b.escrowStatus === 'held' && (
+                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 rounded-full text-xs font-bold flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+                      Payment in Escrow
+                    </span>
+                  )}
+                  {b.escrowStatus === 'released' && (
+                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20 rounded-full text-xs font-bold">
+                      ✓ Payment Released
+                    </span>
+                  )}
+                  {b.escrowStatus === 'refunded' && (
+                    <span className="px-3 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20 rounded-full text-xs font-bold">
+                      ↩ Refunded
+                    </span>
+                  )}
+                </div>
               </div>
-              <h3 className="text-base font-bold text-[#0A1628] group-hover:text-[#2563EB] transition-colors line-clamp-1">{e.title}</h3>
-              <p className="text-xs text-[#75777d] mt-2 line-clamp-2 leading-relaxed">{e.description}</p>
               
-              <div className="mt-4 flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-[10px] text-[#45474c] font-medium">
-                  <MapPin size={12} className="text-[#c5c6cd]" /> {e.location}
-                </div>
-                <div className="flex items-center justify-between mt-2 pt-4 border-t border-[#f2f4f6]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-[10px] text-[#45474c] font-bold">
-                      <Users size={12} className="text-[#c5c6cd]" /> {e.attendees.toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] text-[#45474c] font-bold">
-                      <Clock size={12} className="text-[#c5c6cd]" /> {e.time.split(' ')[0]}
-                    </div>
-                  </div>
-                  <button className="text-[10px] font-black text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    {new Date(e.schedule) > new Date() ? 'Register Now' : 'View Details'} <ChevronRight size={12} />
-                  </button>
-                </div>
+              <div className="flex flex-col gap-2">
+                <button 
+                  onClick={() => {
+                    setReportingEventId(b.eventId);
+                    setReportModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-xl text-xs font-bold transition-colors"
+                >
+                  <AlertTriangle size={14} /> Report Issue
+                </button>
               </div>
+            </div>
+          ))}
+          {bookings.length === 0 && <p className="text-sm text-[#75777d]">You haven't booked any events yet.</p>}
+        </div>
+      )}
+
+      {/* Fraud Report Modal */}
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
+            <button 
+              onClick={() => setReportModalOpen(false)}
+              className="absolute top-4 right-4 text-[#75777d] hover:text-[#0A1628]"
+            >
+              <X size={20} />
+            </button>
+            <div className="p-8">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center text-red-600 dark:text-red-500 mb-6">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-2xl font-black text-[#0A1628] mb-2">Report Event Issue</h3>
+              <p className="text-sm text-[#75777d] mb-6">
+                If the event was cancelled or misrepresented, report it here. We hold payments in escrow for 24 hours post-event to protect attendees.
+              </p>
+              
+              {reportSuccess ? (
+                <div className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl text-sm font-medium border border-emerald-200 dark:border-emerald-500/20">
+                  {reportSuccess}
+                </div>
+              ) : (
+                <form onSubmit={submitFraudReport} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-[#45474c] mb-1">Reason for reporting</label>
+                    <select 
+                      required
+                      value={reportReason}
+                      onChange={e => setReportReason(e.target.value)}
+                      className="w-full bg-[#f7f9fb] border border-[#e0e3e5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB]/30"
+                    >
+                      <option value="">Select a reason...</option>
+                      <option value="Event did not happen">Event did not happen</option>
+                      <option value="Event was severely misrepresented">Event was severely misrepresented</option>
+                      <option value="Organizer did not show up">Organizer did not show up</option>
+                      <option value="Scam/Fraudulent Event">Scam / Fraudulent Event</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#45474c] mb-1">Additional Details (Optional)</label>
+                    <textarea 
+                      rows={3}
+                      value={reportDetails}
+                      onChange={e => setReportDetails(e.target.value)}
+                      className="w-full bg-[#f7f9fb] border border-[#e0e3e5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB]/30 resize-none"
+                    ></textarea>
+                  </div>
+                  <button type="submit" className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-colors">
+                    Submit Report & Freeze Payout
+                  </button>
+                </form>
+              )}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

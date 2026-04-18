@@ -30,6 +30,33 @@ async function main() {
 
   const passwordHash = await bcrypt.hash('password123', 10);
 
+  // 0. Create Admin User
+  const adminUser = await prisma.user.create({
+    data: {
+      id: 'admin-user',
+      email: 'admin@example.com',
+      name: 'Admin User',
+      passwordHash,
+      verified: true,
+    }
+  });
+
+  await prisma.userRole.create({
+    data: {
+      userId: adminUser.id,
+      role: UserRoleType.admin
+    }
+  });
+
+  await prisma.userProfile.create({
+    data: {
+      userId: adminUser.id,
+      fullName: 'System Administrator',
+      about: 'Admin for the platform',
+      gender: Gender.prefer_not_to_say,
+    }
+  });
+
   // 1. Create 5 Users with Roles, Profiles, Educations, Experiences, Certificates
   const users = [];
   for (let i = 1; i <= 5; i++) {

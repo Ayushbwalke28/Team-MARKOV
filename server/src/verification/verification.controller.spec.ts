@@ -1,98 +1,118 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VerificationController } from './verification.controller';
 import { VerificationService } from './verification.service';
-import { SetVerificationDto } from './dto/set-verification.dto';
+import { BadRequestException } from '@nestjs/common';
+import { DocumentTypeEnum } from './dto/start-verification.dto';
 
 describe('VerificationController', () => {
   let controller: VerificationController;
-  let verificationService: jest.Mocked<VerificationService>;
-
-  const mockVerificationService = { setVerified: jest.fn() };
-
-  const baseUser = {
-    id: 'user-1',
-    email: 'alice@example.com',
-    name: 'Alice',
-    verified: true,
-    roles: [{ role: 'candidate' }],
-  };
+  let service: any;
 
   beforeEach(async () => {
+    service = {
+      startSession: jest.fn().mockResolvedValue({ id: 'sess-1' }),
+      recordConsent: jest.fn().mockResolvedValue({}),
+      uploadDocument: jest.fn().mockResolvedValue({ ocrData: {} }),
+      captureFace: jest.fn().mockResolvedValue({ result: { status: 'passed' } }),
+      getSessionStatus: jest.fn().mockResolvedValue({ status: 'pending' }),
+      getUserVerificationStatus: jest.fn().mockResolvedValue({ status: 'passed' }),
+      deleteUserData: jest.fn().mockResolvedValue({ message: 'Deleted' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [VerificationController],
-      providers: [{ provide: VerificationService, useValue: mockVerificationService }],
+      providers: [{ provide: VerificationService, useValue: service }],
     }).compile();
 
     controller = module.get<VerificationController>(VerificationController);
-    verificationService = module.get(VerificationService);
-    jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  describe('startSession', () => {
+    it('should call service.startSession', async () => {
+      const result = await controller.startSession({ user: { userId: 'user-1' } });
+      expect(service.startSession).toHaveBeenCalledWith('user-1');
+      expect(result).toEqual({ id: 'sess-1' });
+    });
   });
 
-  describe('setMe (PATCH /verification/me)', () => {
-    it('should verify a user and return shaped response', async () => {
-      const req = { user: { userId: 'user-1' } };
-      const dto: SetVerificationDto = { verified: true };
-      mockVerificationService.setVerified.mockResolvedValue(baseUser);
-
-      const result = await controller.setMe(req, dto);
-
-      expect(verificationService.setVerified).toHaveBeenCalledWith('user-1', true);
-      expect(result).toEqual({
-        user: { id: 'user-1', email: 'alice@example.com', name: 'Alice', roles: ['candidate'], verified: true },
-      });
+  describe('recordConsent', () => {
+    it('should throw if consent is false', async () => {
+      await expect(
+        controller.recordConsent({ user: { userId: 'user-1' } }, 'sess-1', { consent: false }),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should revoke verification (verified=false)', async () => {
-      const req = { user: { userId: 'user-1' } };
-      const dto: SetVerificationDto = { verified: false };
-      mockVerificationService.setVerified.mockResolvedValue({ ...baseUser, verified: false });
+    it('should call service if consent is true', async () => {
+      await controller.recordConsent({ user: { userId: 'user-1' } }, 'sess-1', { consent: true });
+      expect(service.recordConsent).toHaveBeenCalledWith('sess-1', 'user-1');
+    });
+  });
 
-      const result = await controller.setMe(req, dto);
-
-      expect(result.user.verified).toBe(false);
+  describe('uploadDocument', () => {
+    it('should throw if front image is missing', async () => {
+      await expect(
+        controller.uploadDocument(
+          { user: { userId: 'user-1' } },
+          'sess-1',
+          { documentType: DocumentTypeEnum.aadhaar },
+          { front: undefined },
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should map all roles to flat role strings', async () => {
-      const req = { user: { userId: 'user-2' } };
-      const dto: SetVerificationDto = { verified: true };
-      mockVerificationService.setVerified.mockResolvedValue({
-        ...baseUser,
-        roles: [{ role: 'candidate' }, { role: 'company_owner' }],
-      });
-
-      const result = await controller.setMe(req, dto);
-
-      expect(result.user.roles).toEqual(['candidate', 'company_owner']);
+    it('should throw for invalid mime type', async () => {
+      const mockFile = { mimetype: 'application/msword', buffer: Buffer.from('') } as any;
+      await expect(
+        controller.uploadDocument(
+          { user: { userId: 'user-1' } },
+          'sess-1',
+          { documentType: DocumentTypeEnum.aadhaar },
+          { front: [mockFile] },
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should handle empty roles array', async () => {
-      const req = { user: { userId: 'user-3' } };
-      const dto: SetVerificationDto = { verified: true };
-      mockVerificationService.setVerified.mockResolvedValue({ ...baseUser, roles: [] });
+    it('should call service with buffers', async () => {
+      const mockFront = { mimetype: 'image/jpeg', buffer: Buffer.from('front') } as any;
+      const mockBack = { mimetype: 'image/png', buffer: Buffer.from('back') } as any;
 
-      const result = await controller.setMe(req, dto);
+      await controller.uploadDocument(
+        { user: { userId: 'user-1' } },
+        'sess-1',
+        { documentType: DocumentTypeEnum.aadhaar },
+        { front: [mockFront], back: [mockBack] },
+      );
 
-      expect(result.user.roles).toEqual([]);
+      expect(service.uploadDocument).toHaveBeenCalledWith(
+        'sess-1',
+        'user-1',
+        DocumentTypeEnum.aadhaar,
+        Buffer.from('front'),
+        Buffer.from('back'),
+      );
+    });
+  });
+
+  describe('captureFace', () => {
+    it('should throw if selfie is missing', async () => {
+      await expect(
+        controller.captureFace({ user: { userId: 'user-1' } }, 'sess-1', undefined as any),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should propagate service errors', async () => {
-      const req = { user: { userId: 'bad' } };
-      mockVerificationService.setVerified.mockRejectedValue(new Error('DB error'));
+    it('should call service with buffer', async () => {
+      const mockFile = { mimetype: 'image/jpeg', buffer: Buffer.from('selfie') } as any;
 
-      await expect(controller.setMe(req, { verified: true })).rejects.toThrow('DB error');
+      await controller.captureFace({ user: { userId: 'user-1' } }, 'sess-1', mockFile);
+
+      expect(service.captureFace).toHaveBeenCalledWith('sess-1', 'user-1', Buffer.from('selfie'));
     });
+  });
 
-    it('should call setVerified exactly once per request', async () => {
-      const req = { user: { userId: 'user-once' } };
-      mockVerificationService.setVerified.mockResolvedValue(baseUser);
-
-      await controller.setMe(req, { verified: true });
-
-      expect(verificationService.setVerified).toHaveBeenCalledTimes(1);
+  describe('deleteVerificationData', () => {
+    it('should call service', async () => {
+      await controller.deleteVerificationData({ user: { userId: 'user-1' } });
+      expect(service.deleteUserData).toHaveBeenCalledWith('user-1');
     });
   });
 });

@@ -13,9 +13,12 @@ import { PostModule } from './post/post.module';
 import { FeedModule } from './feed/feed.module';
 import { MediaModule } from './media/media.module';
 import { ConnectionModule } from './connection/connection.module';
+import { CompanyVerificationModule } from './company-verification/company-verification.module';
+import { PaymentsModule } from './payments/payments.module';
+import { InvestmentModule } from './investment/investment.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule, ConnectionModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule, ConnectionModule, CompanyVerificationModule, PaymentsModule, InvestmentModule],
   controllers: [AppController],
   providers: [AppService],
 })

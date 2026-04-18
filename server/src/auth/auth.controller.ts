@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -77,5 +78,22 @@ export class AuthController {
   @Post('change-password')
   async changePassword(@Req() req: any, @Body() body: ChangePasswordDto) {
     return this.authService.changePassword(req.user.userId, body);
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req: Request) {
+    // Initiates the Google OAuth flow
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const publicUser = await this.authService.validateOAuthUser(req.user);
+    const result = await this.authService.login(publicUser);
+    this.setAuthCookies(res, result);
+    // Redirect back to frontend
+    // The browser will carry the newly set cookies to the frontend origin.
+    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000/home');
   }
 }
