@@ -1,4 +1,8 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera } from 'lucide-react';
+import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 const sections = [
   { icon: User, label: 'Personal Information', desc: 'Update your profile photo, bio, and contact details' },
@@ -8,7 +12,88 @@ const sections = [
   { icon: CreditCard, label: 'Billing & Subscriptions', desc: 'Manage your SyncUp Pro enterprise plan' },
 ];
 
+type ProfileDetails = {
+  fullName?: string | null;
+  about?: string | null;
+  avatarUrl?: string | null;
+  createdAt?: string;
+};
+
+type ProfileMeResponse = {
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+    roles: string[];
+    verified: boolean;
+  };
+  profile?: ProfileDetails | null;
+};
+
 export default function Settings() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [profile, setProfile] = useState<ProfileDetails | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { data } = await api.get<ProfileMeResponse>('/profile/me');
+        setProfile(data?.profile ?? null);
+      } catch (error) {
+        setProfile(null);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  const displayName = profile?.fullName || user?.name || 'User';
+  const initial = displayName.charAt(0).toUpperCase() || 'U';
+  const tagline = profile?.about || (user?.roles?.includes('company_owner') ? 'Company Owner' : 'Verified Professional');
+  const joinedText = useMemo(() => {
+    if (!profile?.createdAt) return 'Joined recently';
+    const date = new Date(profile.createdAt);
+    if (Number.isNaN(date.getTime())) return 'Joined recently';
+    return `Joined ${date.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
+  }, [profile?.createdAt]);
+
+  const handleLogoutAll = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleAvatarPick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please select an image file.');
+      return;
+    }
+
+    setAvatarError(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const { data } = await api.post<{ avatarUrl: string }>('/profile/me/avatar', formData);
+      setProfile((prev) => ({ ...(prev || {}), avatarUrl: data.avatarUrl }));
+    } catch (error) {
+      setAvatarError('Failed to upload avatar. Please try again.');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto">
       <div>
@@ -21,25 +106,52 @@ export default function Settings() {
         <div className="p-8 border-b border-[#f2f4f6] flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-[#0A1628] flex items-center justify-center text-white text-3xl font-black shadow-lg">
-                JD
-              </div>
-              <button className="absolute bottom-0 right-0 p-2 bg-[#2563EB] rounded-lg text-white shadow-lg border-2 border-white hover:scale-110 transition-transform">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarPick}
+              />
+              {profile?.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={displayName}
+                  className="w-24 h-24 rounded-full object-cover shadow-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-[#0A1628] flex items-center justify-center text-white text-3xl font-black shadow-lg uppercase">
+                  {initial}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute bottom-0 right-0 p-2 bg-[#2563EB] rounded-lg text-white shadow-lg border-2 border-white hover:scale-110 transition-transform"
+                title="Upload profile photo"
+              >
                 <Camera size={16} />
               </button>
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-xl font-bold text-[#191c1e]">John Doe</h3>
+                <h3 className="text-xl font-bold text-[#191c1e]">{displayName}</h3>
                 <span className="bg-[#2563EB]/10 text-[#2563EB] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Shield size={10} fill="currentColor" /> Verified Human
+                  <Shield size={10} fill="currentColor" /> {user?.verified ? 'Verified Human' : 'Unverified'}
                 </span>
               </div>
-              <p className="text-sm text-[#75777d]">Senior Software Architect @ Client Systems</p>
-              <p className="text-xs text-[#c5c6cd] mt-2 italic">Joined January 2026 • Ledger ID: 4892-001</p>
+              <p className="text-sm text-[#75777d]">{tagline}</p>
+              <p className="text-xs text-[#c5c6cd] mt-2 italic">{joinedText} • Ledger ID: {user?.id?.slice(0, 8) || 'N/A'}</p>
+              {isUploadingAvatar && <p className="text-xs text-[#2563EB] mt-1">Uploading avatar...</p>}
+              {avatarError && <p className="text-xs text-red-600 mt-1">{avatarError}</p>}
             </div>
           </div>
-          <button className="bg-[#f2f4f6] hover:bg-[#e0e3e5] text-[#191c1e] text-xs font-bold px-6 py-2.5 rounded-lg transition-colors">
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            className="bg-[#f2f4f6] hover:bg-[#e0e3e5] text-[#191c1e] text-xs font-bold px-6 py-2.5 rounded-lg transition-colors"
+          >
             View Public Profile
           </button>
         </div>
@@ -67,7 +179,11 @@ export default function Settings() {
 
         {/* Logout */}
         <div className="p-6 bg-[#fef2f2]/30">
-          <button className="flex items-center gap-3 text-red-600 hover:text-red-700 font-bold text-sm transition-colors">
+          <button
+            type="button"
+            onClick={handleLogoutAll}
+            className="flex items-center gap-3 text-red-600 hover:text-red-700 font-bold text-sm transition-colors"
+          >
             <LogOut size={18} /> Sign Out of All Devices
           </button>
         </div>

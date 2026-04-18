@@ -111,5 +111,20 @@ export class ProfileService {
 
     return profile;
   }
+
+  async updateAvatar(userId: string, avatarUrl: string) {
+    await this.prisma.userProfile.upsert({
+      where: { userId },
+      create: { userId, avatarUrl },
+      update: { avatarUrl },
+    });
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    return { avatarUrl };
+  }
 }
 

@@ -43,3 +43,76 @@
   }
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body,
+html.dark #root {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+html.dark .bg-\[\#f7f9fb\],
+html.dark .bg-\[\#f2f4f6\],
+html.dark .bg-white,
+html.dark .bg-\[\#0A1628\],
+html.dark .bg-\[\#101c2e\],
+html.dark .bg-white\/5,
+html.dark .bg-white\/10 {
+  background-color: #000000 !important;
+}
+
+html.dark .text-\[\#191c1e\],
+html.dark .text-\[\#0A1628\],
+html.dark .text-\[\#45474c\],
+html.dark .text-\[\#75777d\],
+html.dark .text-white\/70,
+html.dark .text-white\/60,
+html.dark .text-white\/50,
+html.dark .text-white\/40,
+html.dark .text-white\/30 {
+  color: #ffffff !important;
+}
+
+html.dark .border-\[\#e0e3e5\],
+html.dark .border-white\/10,
+html.dark .border-white\/20,
+html.dark .border-white\/5,
+html.dark .border {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl,
+html.dark .shadow-sm {
+  box-shadow: none !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark ::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.brand-logo {
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(10, 22, 40, 0.14);
+  box-shadow: 0 6px 18px rgba(10, 22, 40, 0.18);
+  background-color: #ffffff;
+}
+
+html.dark .brand-logo {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  background-color: #000000;
+}
+

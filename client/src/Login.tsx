@@ -51,7 +51,7 @@ export default function Login() {
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
-            <img src="/logo.png" alt="Worksphere" className="w-12 h-12" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-12 h-12" />
             <span className="text-2xl font-bold">Worksphere</span>
           </div>
           <h1 className="text-4xl xl:text-5xl font-black leading-[1.1] mb-6">
@@ -72,7 +72,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <img src="/logo.png" alt="Worksphere" className="w-10 h-10" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-10 h-10" />
             <span className="text-xl font-bold text-[#0A1628]">Worksphere</span>
           </div>
 

@@ -13,39 +13,45 @@ import Settings from './pages/Settings.tsx';
 import Network from './pages/Network.tsx';
 
 import { AuthProvider } from './context/AuthContext.tsx';
+import { ThemeProvider } from './context/ThemeContext.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
+import ThemeToggle from './components/ThemeToggle.tsx';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        
-        {/* SyncUp Pro Routes wrapped in Sidebar Layout */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/home" element={<HomeFeed />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/network" element={<Network />} />
-          <Route path="/opportunities" element={<Opportunities />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/ai-assistant" element={<AIAssistant />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          
-          {/* Fallbacks for old paths */}
-          <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-          <Route path="/marketplace" element={<Navigate to="/jobs" replace />} />
-            <Route path="/explore" element={<Navigate to="/opportunities" replace />} />
-          </Route>
-        </Route>
-        
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </Router>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+
+            {/* SyncUp Pro Routes wrapped in Sidebar Layout */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/home" element={<HomeFeed />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/network" element={<Network />} />
+                <Route path="/opportunities" element={<Opportunities />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/ai-assistant" element={<AIAssistant />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Settings />} />
+
+                {/* Fallbacks for old paths */}
+                <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+                <Route path="/marketplace" element={<Navigate to="/jobs" replace />} />
+                <Route path="/explore" element={<Navigate to="/opportunities" replace />} />
+              </Route>
+            </Route>
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <ThemeToggle />
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

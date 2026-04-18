@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Users, UserCheck, UserMinus, UserPlus, Clock, Check, X, Search } from 'lucide-react';
+import { Users, UserCheck, UserMinus, UserPlus, Clock } from 'lucide-react';
 import { connectionApi } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
 
 export default function Network() {
-  const { user } = useAuth();
   const [connections, setConnections] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);

@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
 @UseGuards(JwtAuthGuard)
-@Controller('api/connections')
+@Controller('connections')
 export class ConnectionController {
   constructor(private readonly connectionService: ConnectionService) {}
 
