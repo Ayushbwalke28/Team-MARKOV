@@ -8,8 +8,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS for frontend integration
-  // Cookies require `credentials: true`. `origin: true` reflects the request Origin header.
-  app.enableCors({ origin: true, credentials: true });
+  const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+  app.enableCors({ origin: clientUrl, credentials: true });
 
   // Parse HttpOnly auth cookies (access/refresh tokens)
   app.use(cookieParser());
@@ -25,7 +25,7 @@ async function bootstrap() {
     }),
   );
 
-  const port = Number(process.env.PORT ?? 8001);
+  const port = Number(process.env.PORT ?? 3001);
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
 }

@@ -1,19 +1,35 @@
-import { useState } from 'react';
-import { Calendar, MapPin, Users, Globe, Filter, Search, ChevronRight, CheckCircle2, Star, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, MapPin, Users, Search, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
+import api from '../lib/api';
 
 type EventType = 'all' | 'technology' | 'leadership' | 'networking' | 'design';
-
-const events = [
-  { id: 1, title: 'AI & Machine Learning Summit 2026', type: 'technology', date: 'May 12, 2026', time: '9:00 AM - 5:00 PM PST', location: 'Moscone Center, San Francisco', attendees: 2400, mode: 'In-person', description: 'Join industry leaders exploring the latest breakthroughs in artificial intelligence, from LLMs to autonomous agents.', verified: true },
-  { id: 2, title: 'Product Leadership Masterclass', type: 'leadership', date: 'May 18, 2026', time: '2:00 PM - 4:00 PM EST', location: 'Virtual Event', attendees: 850, mode: 'Virtual', description: 'A deep-dive workshop on building world-class product teams and shipping at scale.', verified: true },
-  { id: 3, title: 'Web3 & Decentralized Finance Forum', type: 'technology', date: 'June 4, 2026', time: '10:00 AM - 6:00 PM GMT', location: 'ExCeL London', attendees: 1200, mode: 'In-person', description: 'Discussing the future of finance, identity, and the decentralized web with top protocol founders.', verified: true },
-  { id: 4, title: 'Executive Networking Night', type: 'networking', date: 'June 12, 2026', time: '6:30 PM - 9:30 PM PST', location: 'The Ritz-Carlton, NYC', attendees: 150, mode: 'In-person', description: 'An exclusive evening for C-suite executives and founders to forge strategic partnerships.', verified: true },
-  { id: 5, title: 'Design Systems Conference', type: 'design', date: 'June 25, 2026', time: '9:00 AM - 4:00 PM PST', location: 'Virtual Event', attendees: 3500, mode: 'Virtual', description: 'The premier global event for designers and engineers building cohesive digital products.', verified: false },
-];
 
 export default function Events() {
   const [activeTab, setActiveTab] = useState<EventType>('all');
   const [search, setSearch] = useState('');
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await api.get('/events');
+      setEvents(res.data.map((e: any) => ({
+        ...e,
+        date: new Date(e.schedule).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+        time: new Date(e.schedule).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+        type: e.category?.toLowerCase() || 'technology',
+        attendees: e._count?.bookings || 0,
+        mode: e.mode.charAt(0).toUpperCase() + e.mode.slice(1),
+        location: e.venue || e.onlinePlatform || 'TBA',
+        verified: e.organizerUser?.verified || false
+      })));
+    } catch (err) {
+      console.error('Failed to fetch events', err);
+    }
+  };
 
   const filteredEvents = events.filter(e => 
     (activeTab === 'all' || e.type === activeTab) && 
@@ -115,7 +131,7 @@ export default function Events() {
                     </div>
                   </div>
                   <button className="text-[10px] font-black text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                    Register Now <ChevronRight size={12} />
+                    {new Date(e.schedule) > new Date() ? 'Register Now' : 'View Details'} <ChevronRight size={12} />
                   </button>
                 </div>
               </div>

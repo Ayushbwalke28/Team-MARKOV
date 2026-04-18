@@ -1,15 +1,25 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, Briefcase, Calendar, Lightbulb, MessageSquare, Bot, BarChart3, Settings, Bell, Search, Menu, X, LogOut } from 'lucide-react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Home, Briefcase, Calendar, Lightbulb, MessageSquare, Bot, BarChart3, Settings, Bell, Search, Menu, X, LogOut, Users } from 'lucide-react';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await logout();
+    navigate('/login');
+  };
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/home' },
     { icon: Briefcase, label: 'Jobs', path: '/jobs' },
     { icon: Calendar, label: 'Events', path: '/events' },
+    { icon: Users, label: 'Network', path: '/network' },
     { icon: Lightbulb, label: 'Opportunities', path: '/opportunities' },
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
     { icon: Bot, label: 'AI Assistant', path: '/ai-assistant' },
@@ -65,18 +75,18 @@ export default function Layout() {
         <div className={`p-4 border-t border-white/10 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
           <div className={`flex items-center ${sidebarCollapsed ? '' : 'gap-3'}`}>
             <div className="w-9 h-9 rounded-full bg-[#2563EB] flex items-center justify-center text-white font-bold text-xs shrink-0 ring-2 ring-white/20">
-              JD
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">John Doe</p>
-                <p className="text-[10px] text-white/40">Verified Professional</p>
+                <p className="text-sm font-semibold truncate capitalize">{user?.name || 'User'}</p>
+                <p className="text-[10px] text-white/40">{user?.roles?.includes('company_owner') ? 'Company Owner' : 'Verified Professional'}</p>
               </div>
             )}
             {!sidebarCollapsed && (
-              <Link to="/" className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors">
+              <button onClick={handleLogout} className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors">
                 <LogOut size={16} />
-              </Link>
+              </button>
             )}
           </div>
         </div>
@@ -99,8 +109,8 @@ export default function Layout() {
               <Bell size={20} />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#2563EB] ring-2 ring-white"></span>
             </button>
-            <div className="w-9 h-9 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              JD
+            <div className="w-9 h-9 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shadow-sm uppercase">
+              {user?.name?.charAt(0) || 'U'}
             </div>
           </div>
         </header>

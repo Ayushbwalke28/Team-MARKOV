@@ -53,14 +53,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile         UserProfile?
-  roles           UserRole[]
-  company         Company?
-  organizedEvents Event[]        @relation("OrganizedEventsUser")
-  eventBookings   EventBooking[]
-  posts           Post[]         @relation("UserPosts")
-  postLikes       PostLike[]
-  postComments    PostComment[]
+  profile             UserProfile?
+  roles               UserRole[]
+  company             Company?
+  organizedEvents     Event[]        @relation("OrganizedEventsUser")
+  eventBookings       EventBooking[]
+  posts               Post[]         @relation("UserPosts")
+  postLikes           PostLike[]
+  postComments        PostComment[]
+  sentConnections     Connection[]   @relation("SentConnections")
+  receivedConnections Connection[]   @relation("ReceivedConnections")
 
   @@index([email])
 }
@@ -310,4 +312,27 @@ model EventBooking {
   @@unique([eventId, userId])
   @@index([eventId])
   @@index([userId])
+}
+
+enum ConnectionStatus {
+  pending
+  accepted
+  declined
+}
+
+model Connection {
+  id         String           @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     ConnectionStatus @default(pending)
+
+  sender   User @relation("SentConnections", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
 }

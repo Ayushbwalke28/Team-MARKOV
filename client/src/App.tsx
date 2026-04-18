@@ -10,19 +10,26 @@ import Messages from './pages/Messages.tsx';
 import AIAssistant from './pages/AIAssistant.tsx';
 import Analytics from './pages/Analytics.tsx';
 import Settings from './pages/Settings.tsx';
+import Network from './pages/Network.tsx';
+
+import { AuthProvider } from './context/AuthContext.tsx';
+import ProtectedRoute from './components/ProtectedRoute.tsx';
 
 export default function App() {
   return (
-    <Router>
+    <AuthProvider>
+      <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         
         {/* SyncUp Pro Routes wrapped in Sidebar Layout */}
-        <Route element={<Layout />}>
-          <Route path="/home" element={<HomeFeed />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/home" element={<HomeFeed />} />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/network" element={<Network />} />
           <Route path="/opportunities" element={<Opportunities />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/ai-assistant" element={<AIAssistant />} />
@@ -32,11 +39,13 @@ export default function App() {
           {/* Fallbacks for old paths */}
           <Route path="/dashboard" element={<Navigate to="/home" replace />} />
           <Route path="/marketplace" element={<Navigate to="/jobs" replace />} />
-          <Route path="/explore" element={<Navigate to="/opportunities" replace />} />
+            <Route path="/explore" element={<Navigate to="/opportunities" replace />} />
+          </Route>
         </Route>
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }

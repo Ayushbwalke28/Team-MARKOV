@@ -1,20 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ImageIcon, Send, CheckCircle2 } from 'lucide-react';
-
-const feedPosts = [
-  { id: 1, author: 'Priya Sharma', role: 'VP Engineering @ Vertex AI Labs', avatar: 'PS', time: '2h', verified: true,
-    content: 'Excited to announce our team just shipped a new real-time inference engine that processes ML predictions in under 50ms. This was a 6-month journey involving edge deployment with ONNX runtime. Proud of the incredible team effort! 🚀',
-    likes: 234, comments: 42, shares: 18, liked: false, saved: false },
-  { id: 2, author: 'Rahul Mehta', role: 'Founder & CEO @ GreenScale Energy', avatar: 'RM', time: '4h', verified: true,
-    content: 'We just closed our Series B at $45M led by Sequoia Capital. The clean energy space is booming, and we are positioned to accelerate the transition to sustainable infrastructure. Looking for senior engineers and product managers to join us!',
-    likes: 892, comments: 156, shares: 87, liked: true, saved: true },
-  { id: 3, author: 'Sarah Jenkins', role: 'Angel Investor & Board Advisor', avatar: 'SJ', time: '6h', verified: true,
-    content: 'After reviewing 200+ pitch decks this quarter, here are the top 3 things that make founders stand out:\n\n1. Clear unit economics from day one\n2. A distribution strategy beyond "we\'ll go viral"\n3. Genuine domain expertise, not just market research\n\nWhat would you add to this list?',
-    likes: 1247, comments: 328, shares: 203, liked: false, saved: false },
-  { id: 4, author: 'David Kim', role: 'Senior Architect @ CloudMesh Network', avatar: 'DK', time: '8h', verified: false,
-    content: 'Just published a deep-dive article on event-driven architectures for multi-region deployments. Covers patterns for handling eventual consistency, saga orchestration, and dead-letter queue strategies. Link in comments!',
-    likes: 156, comments: 23, shares: 45, liked: false, saved: false },
-];
+import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 const suggestedPeople = [
   { name: 'Lena Kowalski', role: 'Design Systems @ Airbnb', avatar: 'LK', mutual: 14 },
@@ -23,13 +10,66 @@ const suggestedPeople = [
 ];
 
 export default function HomeFeed() {
-  const [posts, setPosts] = useState(feedPosts);
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<any[]>([]);
   const [newPost, setNewPost] = useState('');
 
-  const toggleLike = (id: number) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p));
+  useEffect(() => {
+    fetchFeed();
+  }, []);
+
+  const fetchFeed = async () => {
+    try {
+      const res = await api.get('/feed');
+      setPosts(res.data.data.map((p: any) => ({
+        ...p,
+        authorName: p.authorUser?.name || p.authorCompany?.name || 'Unknown',
+        authorInitials: (p.authorUser?.name || p.authorCompany?.name || 'U').charAt(0).toUpperCase(),
+        liked: false, // In a real app, backend should return this
+        saved: false
+      })));
+    } catch (err) {
+      console.error('Failed to fetch feed', err);
+    }
   };
-  const toggleSave = (id: number) => {
+
+  const handlePublish = async () => {
+    if (!newPost.trim()) return;
+    try {
+      const res = await api.post('/posts', { text: newPost, authorType: 'user' });
+      const created = {
+        ...res.data,
+        authorName: user?.name,
+        authorInitials: user?.name?.charAt(0).toUpperCase() || 'U',
+        liked: false,
+        saved: false
+      };
+      setPosts([created, ...posts]);
+      setNewPost('');
+    } catch (err) {
+      console.error('Failed to publish post', err);
+    }
+  };
+
+  const toggleLike = async (id: string) => {
+    const post = posts.find(p => p.id === id);
+    if (!post) return;
+    
+    // Optimistic update
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: !p.liked, _count: { ...p._count, likes: p.liked ? p._count.likes - 1 : p._count.likes + 1 } } : p));
+    
+    try {
+      if (post.liked) {
+        await api.delete(`/posts/${id}/like`);
+      } else {
+        await api.post(`/posts/${id}/like`);
+      }
+    } catch (err) {
+      // Revert on failure
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: post.liked, _count: { ...p._count, likes: post._count.likes } } : p));
+    }
+  };
+  const toggleSave = (id: string) => {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, saved: !p.saved } : p));
   };
 
@@ -40,7 +80,7 @@ export default function HomeFeed() {
         {/* Compose Box */}
         <div className="bg-white rounded-xl border border-[#e0e3e5] p-5 mb-6">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0">JD</div>
+            <div className="w-10 h-10 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0 uppercase">{user?.name?.charAt(0) || 'U'}</div>
             <div className="flex-1">
               <textarea
                 value={newPost}
@@ -53,7 +93,7 @@ export default function HomeFeed() {
                 <div className="flex items-center gap-2">
                   <button className="p-2 rounded-lg hover:bg-[#f2f4f6] text-[#75777d] transition-colors"><ImageIcon size={18} /></button>
                 </div>
-                <button className="bg-[#2563EB] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#1d4ed8] transition-colors flex items-center gap-1.5 shadow-sm">
+                <button onClick={handlePublish} className="bg-[#2563EB] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#1d4ed8] transition-colors flex items-center gap-1.5 shadow-sm">
                   <Send size={14} /> Publish
                 </button>
               </div>
@@ -67,29 +107,29 @@ export default function HomeFeed() {
             <div key={post.id} className="bg-white rounded-xl border border-[#e0e3e5] p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0">{post.avatar}</div>
+                  <div className="w-11 h-11 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0">{post.authorInitials}</div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold text-[#191c1e]">{post.author}</p>
-                      {post.verified && <CheckCircle2 size={14} className="text-[#2563EB] fill-[#2563EB]/10" />}
+                      <p className="text-sm font-bold text-[#191c1e] capitalize">{post.authorName}</p>
+                      {post.authorUser?.verified && <CheckCircle2 size={14} className="text-[#2563EB] fill-[#2563EB]/10" />}
                     </div>
-                    <p className="text-xs text-[#75777d]">{post.role}</p>
-                    <p className="text-[10px] text-[#c5c6cd]">{post.time} ago</p>
+                    <p className="text-xs text-[#75777d]">{post.authorCompany ? 'Company' : 'Professional'}</p>
+                    <p className="text-[10px] text-[#c5c6cd]">{new Date(post.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <button className="p-1.5 rounded-lg hover:bg-[#f2f4f6] text-[#75777d]"><MoreHorizontal size={16} /></button>
               </div>
-              <p className="text-sm text-[#191c1e] leading-relaxed whitespace-pre-line mb-5">{post.content}</p>
+              <p className="text-sm text-[#191c1e] leading-relaxed whitespace-pre-line mb-5">{post.text}</p>
               <div className="flex items-center justify-between pt-4 border-t border-[#f2f4f6]">
                 <div className="flex items-center gap-1">
                   <button onClick={() => toggleLike(post.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${post.liked ? 'text-red-500 bg-red-50' : 'text-[#75777d] hover:bg-[#f2f4f6]'}`}>
-                    <Heart size={15} className={post.liked ? 'fill-red-500' : ''} /> {post.likes}
+                    <Heart size={15} className={post.liked ? 'fill-red-500' : ''} /> {post._count?.likes || 0}
                   </button>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#75777d] hover:bg-[#f2f4f6] transition-colors">
-                    <MessageCircle size={15} /> {post.comments}
+                    <MessageCircle size={15} /> {post._count?.comments || 0}
                   </button>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#75777d] hover:bg-[#f2f4f6] transition-colors">
-                    <Share2 size={15} /> {post.shares}
+                    <Share2 size={15} /> 0
                   </button>
                 </div>
                 <button onClick={() => toggleSave(post.id)} className={`p-1.5 rounded-lg transition-colors ${post.saved ? 'text-[#2563EB]' : 'text-[#75777d] hover:bg-[#f2f4f6]'}`}>

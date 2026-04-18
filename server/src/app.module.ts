@@ -12,9 +12,10 @@ import { EventModule } from './event/event.module';
 import { PostModule } from './post/post.module';
 import { FeedModule } from './feed/feed.module';
 import { MediaModule } from './media/media.module';
+import { ConnectionModule } from './connection/connection.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule, ConnectionModule],
   controllers: [AppController],
   providers: [AppService],
 })

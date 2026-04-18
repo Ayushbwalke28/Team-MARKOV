@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, Paperclip, MoreVertical, Phone, Video, Search, CheckCircle2, Circle } from 'lucide-react';
+import { Send, Paperclip, MoreVertical, Phone, Video, Search, CheckCircle2 } from 'lucide-react';
 
 const conversations = [
   { id: 1, name: 'Sarah Chen', role: 'VP Engineering @ Vertex AI', avatar: 'SC', lastMessage: 'The Q3 roadmap looks solid. Let\'s sync on Monday.', time: '2m', unread: 2, online: true, verified: true },

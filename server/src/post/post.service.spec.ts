@@ -1,8 +1,3 @@
-jest.mock('@prisma/client', () => ({
-  ...jest.requireActual('@prisma/client'),
-  AuthorType: { user: 'user', company: 'company' },
-}));
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostService } from './post.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,6 +6,12 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { describe } from 'node:test';
+
+jest.mock('@prisma/client', () => ({
+  ...jest.requireActual('@prisma/client'),
+  AuthorType: { user: 'user', company: 'company' },
+}));
 
 const mockPrismaService = {
   post: {

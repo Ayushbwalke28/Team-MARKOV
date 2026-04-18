@@ -1,26 +1,39 @@
-import { useState } from 'react';
-import { Search, MapPin, Clock, DollarSign, Building2, Bookmark, Filter, ChevronDown, Briefcase, CheckCircle2 } from 'lucide-react';
-
-const jobs = [
-  { id: 1, title: 'Senior Frontend Engineer', company: 'Vertex AI Labs', location: 'San Francisco, CA', type: 'Full-time', salary: '$180k - $240k', posted: '2 days ago', applicants: 245,
-    tags: ['React', 'TypeScript', 'Node.js'], verified: true, description: 'Build next-gen AI-powered developer tools with a world-class engineering team.' },
-  { id: 2, title: 'UX Research Lead', company: 'GreenScale Energy', location: 'Remote', type: 'Full-time', salary: '$140k - $185k', posted: '3 days ago', applicants: 182,
-    tags: ['User Research', 'Figma', 'Prototyping'], verified: true, description: 'Lead user research initiatives for clean energy products impacting millions of customers.' },
-  { id: 3, title: 'Product Marketing Manager', company: 'NovaPay Financial', location: 'New York, NY', type: 'Full-time', salary: '$130k - $170k', posted: '5 days ago', applicants: 156,
-    tags: ['Growth', 'Analytics', 'B2B SaaS'], verified: true, description: 'Drive go-to-market strategies for our rapidly growing fintech platform.' },
-  { id: 4, title: 'DevOps Architect', company: 'CloudMesh Network', location: 'Seattle, WA', type: 'Contract', salary: '$160k - $210k', posted: '1 week ago', applicants: 98,
-    tags: ['Kubernetes', 'Terraform', 'AWS'], verified: false, description: 'Design cloud-native infrastructure for enterprise-scale distributed systems.' },
-  { id: 5, title: 'Data Science Manager', company: 'Vertex AI Labs', location: 'Remote', type: 'Full-time', salary: '$190k - $260k', posted: '1 day ago', applicants: 312,
-    tags: ['Python', 'ML', 'Leadership'], verified: true, description: 'Lead a team building advanced ML models for real-time data processing.' },
-  { id: 6, title: 'Design Systems Engineer', company: 'CloudMesh Network', location: 'Remote', type: 'Full-time', salary: '$150k - $200k', posted: '4 days ago', applicants: 134,
-    tags: ['React', 'Storybook', 'CSS'], verified: false, description: 'Build and maintain a comprehensive design system used across all products.' },
-];
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Clock, DollarSign, Building2, Bookmark, ChevronDown, Briefcase, CheckCircle2, Filter } from 'lucide-react';
+import api from '../lib/api';
 
 export default function Jobs() {
-  const [saved, setSaved] = useState<Set<number>>(new Set());
+  const [saved, setSaved] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [jobs, setJobs] = useState<any[]>([]);
 
-  const toggleSave = (id: number) => {
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      const res = await api.get('/opportunities');
+      const jobsData = res.data.filter((o: any) => o.type === 'job').map((o: any) => ({
+        id: o.id,
+        title: o.postName,
+        company: o.company?.name || 'Unknown',
+        location: o.mode.charAt(0).toUpperCase() + o.mode.slice(1),
+        type: o.type.charAt(0).toUpperCase() + o.type.slice(1),
+        salary: o.payment || 'Not specified',
+        posted: new Date(o.createdAt).toLocaleDateString(),
+        applicants: 0,
+        tags: [o.mode],
+        verified: o.company?.owner?.verified || false,
+        description: o.description || ''
+      }));
+      setJobs(jobsData);
+    } catch (err) {
+      console.error('Failed to fetch jobs', err);
+    }
+  };
+
+  const toggleSave = (id: string) => {
     setSaved(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   };
 
@@ -75,7 +88,7 @@ export default function Jobs() {
                   </div>
                   <p className="text-sm text-[#45474c] mt-3 leading-relaxed">{job.description}</p>
                   <div className="flex items-center gap-2 mt-3">
-                    {job.tags.map(t => <span key={t} className="text-[10px] font-semibold text-[#2563EB] bg-[#2563EB]/8 px-2.5 py-1 rounded-full">{t}</span>)}
+                    {job.tags.map((t: string) => <span key={t} className="text-[10px] font-semibold text-[#2563EB] bg-[#2563EB]/8 px-2.5 py-1 rounded-full">{t}</span>)}
                     <span className="text-[10px] font-semibold text-[#45474c] bg-[#f2f4f6] px-2.5 py-1 rounded-full">{job.type}</span>
                   </div>
                 </div>

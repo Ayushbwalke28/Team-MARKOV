@@ -1,4 +1,4 @@
-import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera, Check } from 'lucide-react';
+import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera } from 'lucide-react';
 
 const sections = [
   { icon: User, label: 'Personal Information', desc: 'Update your profile photo, bio, and contact details' },
