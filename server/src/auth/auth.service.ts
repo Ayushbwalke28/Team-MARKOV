@@ -4,9 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { authConfig, assertAuthSecretsSafeForProd } from './auth.config';
 import { RegisterDto } from './dto/register.dto';
-import { RefreshDto } from './dto/refresh.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { PublicUser, User } from '../users/users.types';
+import { PublicUser } from '../users/users.types';
 import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 
 @Injectable()
@@ -61,7 +60,7 @@ export class AuthService {
   }
 
   async validateUser(email: string, pass: string): Promise<PublicUser | null> {
-    const user = await this.usersService.findOneByEmail(email);
+    const user = await this.usersService.findOneByEmailWithRoles(email);
     if (!user) return null;
 
     const ok = await bcrypt.compare(pass, user.passwordHash);
@@ -80,53 +79,72 @@ export class AuthService {
       throw new ConflictException('User already exists');
     }
 
-    const now = new Date();
-    const newUser: User = {
-      id: Math.random().toString(36).substring(2, 9),
-      email: data.email,
-      name: data.name,
-      passwordHash: await this.hashPassword(data.password),
-      refreshTokenHash: null,
-      createdAt: now,
-      updatedAt: now,
-    };
+    const fallbackName =
+      typeof data.email === 'string' && data.email.includes('@')
+        ? data.email.split('@')[0].slice(0, 100)
+        : 'New user';
 
-    await this.usersService.create(newUser);
-    
+    const created = await this.usersService.create({
+      id: randomUUID(),
+      email: data.email,
+      name: fallbackName.length >= 2 ? fallbackName : 'New user',
+      passwordHash: await this.hashPassword(data.password),
+    });
+
+    const createdWithRoles = await this.usersService.findByIdWithRoles(created.id);
+    const publicUser = this.usersService.toPublicUser(createdWithRoles ?? created);
+
     // Automatically log in the user after registration
-    return this.login(this.usersService.toPublicUser(newUser));
+    return this.login(publicUser);
   }
 
   async me(userId: string): Promise<PublicUser> {
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findByIdWithRoles(userId);
     if (!user) throw new UnauthorizedException();
     return this.usersService.toPublicUser(user);
   }
 
-  async refresh(userId: string, dto: RefreshDto) {
+  async refreshFromToken(refreshToken: string | undefined) {
+    if (!refreshToken) throw new UnauthorizedException('Missing refresh token');
+
     let decoded: any;
     try {
-      decoded = this.jwtService.verify(dto.refreshToken, { secret: authConfig.jwt.refreshSecret });
+      decoded = this.jwtService.verify(refreshToken, { secret: authConfig.jwt.refreshSecret });
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    if (!decoded || decoded.sub !== userId || decoded.type !== 'refresh') {
+    if (!decoded || decoded.type !== 'refresh' || !decoded.sub) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+    const userId = decoded.sub as string;
 
     const user = await this.usersService.findById(userId);
     if (!user || !user.refreshTokenHash) throw new UnauthorizedException('Invalid refresh token');
 
-    if (!this.refreshTokenMatches(dto.refreshToken, user.refreshTokenHash)) {
+    if (!this.refreshTokenMatches(refreshToken, user.refreshTokenHash)) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    return this.buildAuthResponse(this.usersService.toPublicUser(user));
+    const userWithRoles = await this.usersService.findByIdWithRoles(userId);
+    return this.buildAuthResponse(this.usersService.toPublicUser(userWithRoles ?? user));
   }
 
   async logout(userId: string): Promise<{ ok: true }> {
     await this.usersService.setRefreshTokenHash(userId, null);
+    return { ok: true };
+  }
+
+  async logoutFromRefreshToken(refreshToken: string | undefined): Promise<{ ok: true }> {
+    if (!refreshToken) return { ok: true };
+    try {
+      const decoded: any = this.jwtService.verify(refreshToken, { secret: authConfig.jwt.refreshSecret });
+      if (decoded?.type === 'refresh' && decoded?.sub) {
+        await this.usersService.setRefreshTokenHash(decoded.sub as string, null);
+      }
+    } catch {
+      // If it's invalid/expired, we still clear cookies client-side.
+    }
     return { ok: true };
   }
 

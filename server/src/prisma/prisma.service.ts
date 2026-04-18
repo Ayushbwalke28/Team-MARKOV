@@ -5,19 +5,16 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  private readonly pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-  });
+  private readonly pool: Pool;
 
   constructor() {
-    super({
-      adapter: new PrismaPg(
-        // Prisma expects a pg Pool/Client instance; Pool is recommended.
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        // (types are intentionally loose across adapter boundaries)
-        (undefined as unknown) as never,
-      ),
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
     });
+    super({
+      adapter: new PrismaPg(pool as never),
+    });
+    this.pool = pool;
   }
 
   async onModuleInit() {

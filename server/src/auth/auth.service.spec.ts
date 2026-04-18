@@ -13,19 +13,45 @@ describe('AuthService', () => {
 
     const prismaMock = {
       user: {
-        findUnique: jest.fn(async ({ where }: any) => {
+        findUnique: jest.fn(async ({ where, include }: any) => {
           if (where.email) {
             for (const u of state.values()) {
-              if (u.email === where.email) return { ...u };
+              if (u.email === where.email) {
+                return {
+                  ...u,
+                  ...(include?.roles ? { roles: u.roles ?? [] } : {}),
+                };
+              }
             }
             return null;
           }
-          if (where.id) return state.get(where.id) ? { ...state.get(where.id) } : null;
+          if (where.id) {
+            const u = state.get(where.id);
+            if (!u) return null;
+            return {
+              ...u,
+              ...(include?.roles ? { roles: u.roles ?? [] } : {}),
+              ...(include?.profile ? { profile: u.profile ?? null } : {}),
+            };
+          }
           return null;
         }),
         create: jest.fn(async ({ data }: any) => {
-          state.set(data.id, { ...data });
-          return { ...data };
+          const now = new Date();
+          const created = {
+            id: data.id,
+            email: data.email,
+            name: data.name,
+            passwordHash: data.passwordHash,
+            refreshTokenHash: data.refreshTokenHash ?? null,
+            verified: data.verified ?? false,
+            createdAt: now,
+            updatedAt: now,
+            roles: [{ role: 'candidate' }],
+            profile: { userId: data.id, fullName: data.name },
+          };
+          state.set(data.id, created);
+          return { ...created };
         }),
         update: jest.fn(async ({ where, data }: any) => {
           const current = state.get(where.id);
@@ -61,13 +87,18 @@ describe('AuthService', () => {
   it('registers a new user and returns tokens', async () => {
     const res = await authService.register({
       email: 'a@example.com',
-      name: 'Alice',
       password: 'Password123!',
     });
 
     expect(res).toHaveProperty('accessToken');
     expect(res).toHaveProperty('refreshToken');
-    expect(res.user).toEqual({ id: expect.any(String), email: 'a@example.com', name: 'Alice' });
+    expect(res.user).toEqual({
+      id: expect.any(String),
+      email: 'a@example.com',
+      name: 'New user',
+      roles: ['candidate'],
+      verified: false,
+    });
 
     const stored = await usersService.findOneByEmail('a@example.com');
     expect(stored).toBeDefined();
@@ -78,14 +109,12 @@ describe('AuthService', () => {
   it('rejects duplicate registration', async () => {
     await authService.register({
       email: 'dup@example.com',
-      name: 'Dup',
       password: 'Password123!',
     });
 
     await expect(
       authService.register({
         email: 'dup@example.com',
-        name: 'Dup2',
         password: 'Password123!',
       }),
     ).rejects.toMatchObject({ status: 409 });
@@ -94,12 +123,17 @@ describe('AuthService', () => {
   it('validates user credentials', async () => {
     await authService.register({
       email: 'login@example.com',
-      name: 'Login',
       password: 'Password123!',
     });
 
     const ok = await authService.validateUser('login@example.com', 'Password123!');
-    expect(ok).toMatchObject({ email: 'login@example.com', name: 'Login', id: expect.any(String) });
+    expect(ok).toMatchObject({
+      email: 'login@example.com',
+      name: 'login',
+      id: expect.any(String),
+      roles: ['candidate'],
+      verified: false,
+    });
 
     const bad = await authService.validateUser('login@example.com', 'wrong');
     expect(bad).toBeNull();
@@ -108,38 +142,35 @@ describe('AuthService', () => {
   it('refresh rotates refresh tokens (old token becomes invalid)', async () => {
     const first = await authService.register({
       email: 'r@example.com',
-      name: 'Rotator',
       password: 'Password123!',
     });
 
     const me = await authService.me(first.user.id);
     expect(me.email).toBe('r@example.com');
 
-    const second = await authService.refresh(first.user.id, { refreshToken: first.refreshToken });
+    const second = await authService.refreshFromToken(first.refreshToken);
     expect(second.refreshToken).not.toEqual(first.refreshToken);
 
     await expect(
-      authService.refresh(first.user.id, { refreshToken: first.refreshToken }),
+      authService.refreshFromToken(first.refreshToken),
     ).rejects.toMatchObject({ status: 401 });
   });
 
   it('logout invalidates refresh token', async () => {
     const first = await authService.register({
       email: 'logout@example.com',
-      name: 'Logout',
       password: 'Password123!',
     });
 
     await authService.logout(first.user.id);
     await expect(
-      authService.refresh(first.user.id, { refreshToken: first.refreshToken }),
+      authService.refreshFromToken(first.refreshToken),
     ).rejects.toMatchObject({ status: 401 });
   });
 
   it('changePassword updates password and clears refresh token', async () => {
     const first = await authService.register({
       email: 'pw@example.com',
-      name: 'PW',
       password: 'Password123!',
     });
 
@@ -162,7 +193,7 @@ describe('AuthService', () => {
     expect(newValid?.email).toBe('pw@example.com');
 
     await expect(
-      authService.refresh(first.user.id, { refreshToken: first.refreshToken }),
+      authService.refreshFromToken(first.refreshToken),
     ).rejects.toMatchObject({ status: 401 });
   });
 });
