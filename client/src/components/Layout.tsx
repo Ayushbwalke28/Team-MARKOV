@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, Briefcase, Calendar, Lightbulb, MessageSquare, Bot, BarChart3, Settings, Bell, Search, LogOut, Users } from 'lucide-react';
+import { Home, Briefcase, Calendar, Lightbulb, MessageSquare, Bot, BarChart3, Settings, Bell, Search, LogOut, Users, ShieldCheck, Building2, TrendingUp } from 'lucide-react';
 
 export default function Layout() {
   const location = useLocation();
@@ -25,6 +25,9 @@ export default function Layout() {
     { icon: MessageSquare, label: 'Messages', path: '/messages' },
     { icon: Bot, label: 'AI Assistant', path: '/ai-assistant' },
     { icon: BarChart3, label: 'Analytics', path: '/analytics' },
+    { icon: ShieldCheck, label: 'Verification', path: '/verify' },
+    { icon: Building2, label: 'Company Hub', path: '/company' },
+    { icon: TrendingUp, label: 'Investor Hub', path: '/investor' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 

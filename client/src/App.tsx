@@ -11,6 +11,11 @@ import AIAssistant from './pages/AIAssistant.tsx';
 import Analytics from './pages/Analytics.tsx';
 import Settings from './pages/Settings.tsx';
 import Network from './pages/Network.tsx';
+import Verification from './pages/Verification.tsx';
+import AdminReviewDashboard from './pages/AdminReviewDashboard.tsx';
+import CompanyDashboard from './pages/CompanyDashboard.tsx';
+import InvestorDashboard from './pages/InvestorDashboard.tsx';
+import DealRoomView from './pages/DealRoomView.tsx';
 
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
@@ -39,6 +44,11 @@ export default function App() {
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/profile" element={<Settings />} />
+                <Route path="/verify" element={<Verification />} />
+                <Route path="/admin/reviews" element={<AdminReviewDashboard />} />
+                <Route path="/company" element={<CompanyDashboard />} />
+                <Route path="/investor" element={<InvestorDashboard />} />
+                <Route path="/deal-room/:id" element={<DealRoomView />} />
 
                 {/* Fallbacks for old paths */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />

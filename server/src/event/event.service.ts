@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { OrganizerType } from '@prisma/client';
+import { StripeService } from '../payments/stripe/stripe.service';
 
 /** Default include shape for event queries — organizer info + aggregated counts */
 const EVENT_INCLUDE = {
@@ -20,7 +21,10 @@ const EVENT_INCLUDE = {
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stripeService: StripeService,
+  ) {}
 
   async create(userId: string, dto: CreateEventDto) {
     let organizerCompanyId: string | undefined = undefined;
@@ -165,14 +169,24 @@ export class EventService {
       throw new ConflictException('You have already booked this event');
     }
 
+    let paymentId: string | undefined = undefined;
+    let escrowStatus: any = 'pending';
+
+    if (event.fees > 0) {
+      paymentId = await this.stripeService.holdFundsInEscrow(event.id, userId, event.fees);
+      escrowStatus = 'held';
+    }
+
     return this.prisma.eventBooking.create({
       data: {
         eventId: id,
         userId,
+        paymentId,
+        escrowStatus,
       },
       include: {
         event: {
-          select: { id: true, title: true, schedule: true, mode: true },
+          select: { id: true, title: true, schedule: true, mode: true, fees: true },
         },
       },
     });
@@ -243,5 +257,36 @@ export class EventService {
       include: EVENT_INCLUDE,
       orderBy: { schedule: 'asc' },
     });
+  }
+
+  async reportFraud(eventId: string, userId: string, reason: string, details?: string) {
+    const booking = await this.prisma.eventBooking.findUnique({
+      where: {
+        eventId_userId: { eventId, userId },
+      },
+    });
+
+    if (!booking) {
+      throw new ForbiddenException('You can only report events you have booked');
+    }
+
+    // Create the fraud report
+    const report = await this.prisma.fraudReport.create({
+      data: {
+        eventId,
+        userId,
+        reason,
+        details,
+        status: 'pending',
+      },
+    });
+
+    // Freeze event payout if not already released
+    await this.prisma.event.update({
+      where: { id: eventId },
+      data: { payoutStatus: 'held' },
+    });
+
+    return report;
   }
 }

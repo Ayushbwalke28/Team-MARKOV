@@ -61,7 +61,7 @@ export class AuthService {
 
   async validateUser(email: string, pass: string): Promise<PublicUser | null> {
     const user = await this.usersService.findOneByEmailWithRoles(email);
-    if (!user) return null;
+    if (!user || !user.passwordHash) return null;
 
     const ok = await bcrypt.compare(pass, user.passwordHash);
     if (!ok) return null;
@@ -96,6 +96,36 @@ export class AuthService {
 
     // Automatically log in the user after registration
     return this.login(publicUser);
+  }
+
+  async validateOAuthUser(profile: any): Promise<PublicUser> {
+    // Check if user already exists by googleId
+    let user = await this.usersService.findOneByGoogleId(profile.googleId);
+    
+    if (!user) {
+      // Check if user exists by email
+      user = await this.usersService.findOneByEmail(profile.email);
+      
+      if (user) {
+        // Link googleId to existing user
+        await this.usersService.setGoogleId(user.id, profile.googleId);
+      } else {
+        // Create new user
+        const fallbackName = profile.firstName && profile.lastName 
+          ? `${profile.firstName} ${profile.lastName}`
+          : profile.firstName || profile.email.split('@')[0];
+          
+        user = await this.usersService.create({
+          id: randomUUID(),
+          email: profile.email,
+          name: fallbackName.slice(0, 100),
+          googleId: profile.googleId,
+        });
+      }
+    }
+    
+    const userWithRoles = await this.usersService.findByIdWithRoles(user.id);
+    return this.usersService.toPublicUser(userWithRoles ?? user);
   }
 
   async me(userId: string): Promise<PublicUser> {

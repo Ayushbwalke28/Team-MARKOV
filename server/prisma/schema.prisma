@@ -9,6 +9,7 @@ datasource db {
 enum UserRoleType {
   candidate
   company_owner
+  admin
 }
 
 enum Gender {
@@ -41,11 +42,31 @@ enum AuthorType {
   company
 }
 
+enum VerificationStatus {
+  pending
+  document_uploaded
+  face_captured
+  processing
+  passed
+  failed
+  manual_review
+  locked
+}
+
+enum DocumentType {
+  passport
+  drivers_license
+  aadhaar
+  pan_card
+  national_id
+}
+
 model User {
   id               String  @id
   email            String  @unique
   name             String
-  passwordHash     String
+  passwordHash     String?
+  googleId         String? @unique
   refreshTokenHash String?
   verified         Boolean @default(false)
   avatarUrl        String?
@@ -53,16 +74,21 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile             UserProfile?
-  roles               UserRole[]
-  company             Company?
-  organizedEvents     Event[]        @relation("OrganizedEventsUser")
-  eventBookings       EventBooking[]
-  posts               Post[]         @relation("UserPosts")
-  postLikes           PostLike[]
-  postComments        PostComment[]
-  sentConnections     Connection[]   @relation("SentConnections")
-  receivedConnections Connection[]   @relation("ReceivedConnections")
+  profile                     UserProfile?
+  roles                       UserRole[]
+  company                     Company?
+  organizedEvents             Event[]                      @relation("OrganizedEventsUser")
+  eventBookings               EventBooking[]
+  posts                       Post[]                       @relation("UserPosts")
+  postLikes                   PostLike[]
+  postComments                PostComment[]
+  sentConnections             Connection[]                 @relation("SentConnections")
+  receivedConnections         Connection[]                 @relation("ReceivedConnections")
+  verificationSessions        VerificationSession[]
+  companyVerificationSessions CompanyVerificationSession[]
+  investorProfile             InvestorProfile?
+  dealRooms                   DealRoom[]
+  fraudReports                FraudReport[]
 
   @@index([email])
 }
@@ -167,20 +193,27 @@ model Certificate {
 }
 
 model Company {
-  id          String  @id @default(cuid())
-  name        String  @unique
-  ownerId     String  @unique
-  location    String?
-  startYear   Int?
-  description String?
-  size        String?
-  domain      String?
-  logoUrl     String?
+  id                      String                    @id @default(cuid())
+  name                    String                    @unique
+  ownerId                 String                    @unique
+  location                String?
+  startYear               Int?
+  description             String?
+  size                    String?
+  domain                  String?
+  logoUrl                 String?
+  verificationStatus      CompanyVerificationStatus @default(pending)
+  taxId                   String?
+  registrationDocumentUrl String?
+  verifiedAt              DateTime?
 
-  owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  opportunities   Opportunity[]
-  organizedEvents Event[]       @relation("OrganizedEventsCompany")
-  posts           Post[]        @relation("CompanyPosts")
+  owner                       User                         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  opportunities               Opportunity[]
+  organizedEvents             Event[]                      @relation("OrganizedEventsCompany")
+  posts                       Post[]                       @relation("CompanyPosts")
+  companyVerificationSessions CompanyVerificationSession[]
+  investmentProfile           InvestmentProfile?
+  dealRooms                   DealRoom[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -286,10 +319,14 @@ model Event {
   venue              String?
   onlinePlatform     String?
   bannerUrl          String?
+  status             EventStatus   @default(draft)
+  trustScore         Float?        @default(0)
+  payoutStatus       PayoutStatus  @default(held)
 
   organizerUser    User?          @relation("OrganizedEventsUser", fields: [organizerUserId], references: [id], onDelete: Cascade)
   organizerCompany Company?       @relation("OrganizedEventsCompany", fields: [organizerCompanyId], references: [id], onDelete: Cascade)
   bookings         EventBooking[]
+  fraudReports     FraudReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -305,6 +342,11 @@ model EventBooking {
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  paymentId     String?
+  escrowStatus  EscrowStatus  @default(pending)
+  checkInStatus CheckInStatus @default(pending)
+  refundStatus  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -335,4 +377,193 @@ model Connection {
   @@unique([senderId, receiverId])
   @@index([senderId])
   @@index([receiverId])
+}
+
+model VerificationSession {
+  id           String             @id @default(cuid())
+  userId       String
+  status       VerificationStatus @default(pending)
+  documentType DocumentType?
+
+  // OCR extracted fields (stored temporarily for review, cleared after)
+  ocrName     String?
+  ocrDob      String?
+  ocrIdNumber String?
+  ocrExpiry   String?
+  ocrAddress  String?
+
+  // Document validation results
+  documentValid    Boolean?
+  documentExpired  Boolean?
+  documentBlurry   Boolean?
+  documentTampered Boolean?
+
+  // Face verification results
+  faceMatchScore Float?
+  livenessPass   Boolean?
+
+  // Overall result
+  confidenceScore Float?
+  failureReason   String?
+  attemptNumber   Int     @default(1)
+
+  // Consent tracking
+  consentGiven     Boolean   @default(false)
+  consentTimestamp DateTime?
+
+  // Data retention
+  rawDataDeletedAt DateTime?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manualReview ManualReview?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ManualReview {
+  id                    String    @id @default(cuid())
+  verificationSessionId String    @unique
+  reason                String
+  reviewedBy            String?
+  reviewDecision        String?
+  reviewNotes           String?
+  reviewedAt            DateTime?
+  slaDeadline           DateTime
+
+  verificationSession VerificationSession @relation(fields: [verificationSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reviewedBy])
+}
+
+// =======================
+// Trust & Security Models
+// =======================
+
+enum CompanyVerificationStatus {
+  pending
+  verified
+  rejected
+}
+
+model CompanyVerificationSession {
+  id           String             @id @default(cuid())
+  companyId    String
+  userId       String
+  status       VerificationStatus @default(pending)
+  documentType String?
+
+  apiValidationSuccessful Boolean?
+  documentValid           Boolean?
+
+  directorsMatched       Boolean?
+  authorizationLetterUrl String?
+
+  failureReason String?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([userId])
+}
+
+enum EventStatus {
+  draft
+  published
+  completed
+  cancelled
+}
+
+enum PayoutStatus {
+  held
+  processing
+  released
+  refunded
+}
+
+enum EscrowStatus {
+  pending
+  held
+  refunded
+  released
+}
+
+enum CheckInStatus {
+  pending
+  checked_in
+}
+
+model FraudReport {
+  id      String  @id @default(cuid())
+  eventId String
+  userId  String
+  reason  String
+  details String?
+  status  String  @default("pending")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([userId])
+}
+
+model InvestmentProfile {
+  id            String  @id @default(cuid())
+  companyId     String  @unique
+  fundingStage  String?
+  askAmount     Float?
+  pitchDeckUrl  String?
+  financialsUrl String?
+  isVerified    Boolean @default(false)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InvestorProfile {
+  id                  String  @id @default(cuid())
+  userId              String  @unique
+  accreditationStatus String  @default("pending")
+  investmentThesis    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DealRoom {
+  id                 String  @id @default(cuid())
+  companyId          String
+  investorId         String
+  status             String  @default("requested")
+  ndaSigned          Boolean @default(false)
+  ndaUrl             String?
+  videoMeetingStatus String  @default("pending")
+
+  company  Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  investor User    @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, investorId])
+  @@index([companyId])
+  @@index([investorId])
 }

@@ -2,14 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/profile.dto';
+import { MediaService } from '../media/media.service';
 
 describe('ProfileController', () => {
   let controller: ProfileController;
   let profileService: jest.Mocked<ProfileService>;
+  let mediaService: jest.Mocked<MediaService>;
 
   const mockProfileService = {
     getMe: jest.fn(),
     updateMe: jest.fn(),
+    updateAvatar: jest.fn(),
+  };
+
+  const mockMediaService = {
+    uploadImage: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -20,11 +27,16 @@ describe('ProfileController', () => {
           provide: ProfileService,
           useValue: mockProfileService,
         },
+        {
+          provide: MediaService,
+          useValue: mockMediaService,
+        },
       ],
     }).compile();
 
     controller = module.get<ProfileController>(ProfileController);
     profileService = module.get(ProfileService);
+    mediaService = module.get(MediaService);
     jest.clearAllMocks();
   });
 
@@ -110,6 +122,39 @@ describe('ProfileController', () => {
       mockProfileService.updateMe.mockRejectedValue(new Error('Update failed'));
 
       await expect(controller.updateMe(mockReq, {})).rejects.toThrow('Update failed');
+    });
+  });
+
+  // ── POST /profile/me/avatar ──────────────────────────────────────────────
+
+  describe('uploadAvatar (POST /profile/me/avatar)', () => {
+    it('should upload avatar and return updated profile data', async () => {
+      const mockReq = { user: { userId: 'user-avatar' } };
+      const mockFile = {
+        fieldname: 'file',
+        originalname: 'avatar.jpg',
+        buffer: Buffer.from('fake-image'),
+      } as Express.Multer.File;
+
+      const mockUploadResult = { secure_url: 'https://cloudinary.com/avatar.jpg' };
+      const mockProfileResult = { avatarUrl: 'https://cloudinary.com/avatar.jpg' };
+
+      mockMediaService.uploadImage.mockResolvedValue(mockUploadResult as any);
+      mockProfileService.updateAvatar.mockResolvedValue(mockProfileResult as any);
+
+      const result = await controller.uploadAvatar(mockReq, mockFile);
+
+      expect(mediaService.uploadImage).toHaveBeenCalledWith(mockFile);
+      expect(profileService.updateAvatar).toHaveBeenCalledWith('user-avatar', mockUploadResult.secure_url);
+      expect(result).toEqual(mockProfileResult);
+    });
+
+    it('should throw BadRequestException if file is missing', async () => {
+      const mockReq = { user: { userId: 'user-avatar' } };
+
+      await expect(controller.uploadAvatar(mockReq, null as any)).rejects.toThrow(
+        'Avatar file is required',
+      );
     });
   });
 });

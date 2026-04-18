@@ -12,6 +12,11 @@ export class UsersService {
     return user ?? undefined;
   }
 
+  async findOneByGoogleId(googleId: string): Promise<User | undefined> {
+    const user = await this.prisma.user.findUnique({ where: { googleId } });
+    return user ?? undefined;
+  }
+
   async findOneByEmailWithRoles(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -39,7 +44,8 @@ export class UsersService {
         id: input.id,
         email: input.email,
         name: input.name,
-        passwordHash: input.passwordHash,
+        passwordHash: input.passwordHash ?? null,
+        googleId: input.googleId ?? null,
         refreshTokenHash: null,
         profile: {
           create: {
@@ -57,6 +63,13 @@ export class UsersService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshTokenHash },
+    });
+  }
+
+  async setGoogleId(userId: UserId, googleId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { googleId },
     });
   }
 
