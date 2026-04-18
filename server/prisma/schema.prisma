@@ -6,30 +6,156 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRoleType {
+  candidate
+  company_owner
+}
+
+enum Gender {
+  male
+  female
+  non_binary
+  other
+  prefer_not_to_say
+}
+
 model User {
-  id               String   @id @default(uuid())
+  id               String   @id
   email            String   @unique
   name             String
   passwordHash     String
   refreshTokenHash String?
+  verified         Boolean  @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  profile  UserProfile?
+  roles    UserRole[]
+  company  Company?
 
   @@index([email])
 }
 
-// Minimal placeholders for modular monolith expansion.
-// You can evolve these in their modules without breaking user auth.
-model Company {
-  id        String   @id @default(uuid())
-  name      String   @unique
+model UserRole {
+  userId String
+  role   UserRoleType
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, role])
+  @@index([role])
+}
+
+model UserProfile {
+  userId String @id
+
+  // Basic info
+  fullName String?
+  about    String?
+
+  // Media (store URLs/paths; actual file storage is handled elsewhere)
+  avatarUrl String?
+  bannerUrl String?
+
+  // Demographics
+  dob      DateTime?
+  gender   Gender?
+  pronouns String?
+
+  education    Education[]
+  experience   Experience[]
+  certificates Certificate[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Education {
+  id String @id @default(cuid())
+
+  profileUserId String
+  profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
+
+  institution String
+  degree      String?
+  fieldOfStudy String?
+  startDate   DateTime?
+  endDate     DateTime?
+  grade       String?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileUserId])
+}
+
+model Experience {
+  id String @id @default(cuid())
+
+  profileUserId String
+  profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
+
+  title       String
+  company     String?
+  location    String?
+  employmentType String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isCurrent   Boolean @default(false)
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileUserId])
+}
+
+model Certificate {
+  id String @id @default(cuid())
+
+  profileUserId String
+  profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
+
+  title        String
+  issuer       String?
+  issueDate    DateTime?
+  expirationDate DateTime?
+  credentialId String?
+  credentialUrl String?
+  description  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileUserId])
+}
+
+model Company {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  ownerId     String  @unique
+  location    String?
+  startYear   Int?
+  description String?
+  size        String?
+  domain      String?
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
 model Post {
-  id        String   @id @default(uuid())
+  id        String   @id
   body      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
