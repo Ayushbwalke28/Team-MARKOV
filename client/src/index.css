@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(210 33% 98%);
+  --color-foreground: hsl(204 9% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(204 9% 11%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(204 9% 11%);
+  --color-primary: hsl(216 60% 10%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(221 83% 53%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(210 17% 96%);
+  --color-muted-foreground: hsl(223 5% 28%);
+  --color-accent: hsl(210 17% 96%);
+  --color-accent-foreground: hsl(204 9% 11%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border: hsl(210 17% 85%);
+  --color-input: hsl(210 17% 96%);
+  --color-ring: hsl(216 60% 10%);
+  
+  --radius-lg: 0.75rem;
+
+  /* Architectural Custom Tokens */
+  --color-surface: hsl(210 33% 98%);
+  --color-surface-low: hsl(210 17% 96%);
+  --color-surface-lowest: hsl(0 0% 100%);
+  --color-surface-high: hsl(210 9% 91%);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
