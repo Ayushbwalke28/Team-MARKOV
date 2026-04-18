@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateUserInput, PublicUser, User, UserId, UserRoleType } from './users.types';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -72,6 +72,24 @@ export class UsersService {
       where: { id: userId },
       data: { verified },
     });
+  }
+
+  async setOwnsCompany(userId: UserId, ownsCompany: boolean): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new ForbiddenException('User not found');
+    if (!user.verified) throw new ForbiddenException('Only verified users can own a company');
+
+    if (ownsCompany) {
+      await this.prisma.userRole.upsert({
+        where: { userId_role: { userId, role: 'company_owner' } },
+        update: {},
+        create: { userId, role: 'company_owner' },
+      });
+    } else {
+      await this.prisma.userRole.deleteMany({
+        where: { userId, role: 'company_owner' },
+      });
+    }
   }
 
   toPublicUser(

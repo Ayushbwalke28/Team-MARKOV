@@ -304,3 +304,130 @@ All verification routes are under `/verification`. These are **placeholders** so
 }
 ```
 
+## Users
+
+### PATCH `/users/me/owns-company` (JWT)
+
+- **Auth**: required
+- **Description**: Grants or revokes the `company_owner` role on the authenticated user. **The user must be verified (`verified: true`) first.**
+- **Body**
+  - `ownsCompany` (boolean, required)
+
+- **Sample request**
+
+```json
+{
+  "ownsCompany": true
+}
+```
+
+- **Sample response**
+
+```json
+{
+  "user": {
+    "id": "4a3c2b1d-0000-4000-8000-000000000000",
+    "email": "alice@example.com",
+    "name": "alice",
+    "roles": ["candidate", "company_owner"],
+    "verified": true
+  }
+}
+```
+
+## Companies
+
+All company routes are under `/companies`.
+
+### POST `/companies` (JWT)
+
+- **Auth**: required
+- **Role**: `company_owner`
+- **Description**: Creates a new company for the authenticated user. A user can only own one company.
+- **Body**
+  - `name` (string, required, 2-100 chars)
+  - `location` (string, optional, max 200 chars)
+  - `startYear` (integer, optional, 1800 to current year)
+  - `description` (string, optional, max 2000 chars)
+  - `size` (string, optional, max 50 chars, e.g. "1-10", "11-50")
+  - `domain` (string, optional, max 100 chars)
+
+- **Sample request**
+
+```json
+{
+  "name": "Acme Corp",
+  "location": "San Francisco, CA",
+  "startYear": 2020,
+  "description": "Leading provider of anvils.",
+  "size": "11-50",
+  "domain": "acme.example.com"
+}
+```
+
+- **Sample response**
+
+```json
+{
+  "id": "cm2c2b1d-0000-4000-8000-000000000000",
+  "name": "Acme Corp",
+  "ownerId": "4a3c2b1d-0000-4000-8000-000000000000",
+  "location": "San Francisco, CA",
+  "startYear": 2020,
+  "description": "Leading provider of anvils.",
+  "size": "11-50",
+  "domain": "acme.example.com",
+  "createdAt": "2026-04-18T14:00:00.000Z",
+  "updatedAt": "2026-04-18T14:00:00.000Z",
+  "owner": {
+    "id": "4a3c2b1d-0000-4000-8000-000000000000",
+    "name": "alice",
+    "email": "alice@example.com"
+  }
+}
+```
+
+### GET `/companies`
+
+- **Auth**: none
+- **Description**: Lists all companies, ordered by creation date descending.
+- **Body**: none
+
+### GET `/companies/mine` (JWT)
+
+- **Auth**: required
+- **Description**: Returns the company owned by the authenticated user. Returns 404 if the user doesn't own a company.
+- **Body**: none
+
+### GET `/companies/:id`
+
+- **Auth**: none
+- **Description**: Gets a single company by ID.
+- **Body**: none
+
+### PATCH `/companies/:id` (JWT)
+
+- **Auth**: required
+- **Description**: Updates a company. The authenticated user MUST be the owner of the company.
+- **Body** (All fields are optional)
+  - `name` (string, 2-100 chars)
+  - `location` (string, max 200 chars)
+  - `startYear` (integer, 1800 to current year)
+  - `description` (string, max 2000 chars)
+  - `size` (string, max 50 chars)
+  - `domain` (string, max 100 chars)
+
+### DELETE `/companies/:id` (JWT)
+
+- **Auth**: required
+- **Description**: Deletes a company. The authenticated user MUST be the owner of the company.
+- **Body**: none
+
+- **Sample response**
+
+```json
+{
+  "ok": true
+}
+```
+
