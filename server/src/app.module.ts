@@ -7,9 +7,15 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { VerificationModule } from './verification/verification.module';
 import { CompanyModule } from './company/company.module';
+import { OpportunityModule } from './opportunity/opportunity.module';
+import { EventModule } from './event/event.module';
+import { PostModule } from './post/post.module';
+import { FeedModule } from './feed/feed.module';
+import { MediaModule } from './media/media.module';
+import { ConnectionModule } from './connection/connection.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule, ConnectionModule],
   controllers: [AppController],
   providers: [AppService],
 })

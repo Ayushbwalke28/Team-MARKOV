@@ -23,7 +23,7 @@ export default function LandingPage() {
       <nav className="bg-[#0A1628] text-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-4">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Worksphere" className="w-10 h-10" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-10 h-10" />
             <span className="text-xl font-bold tracking-tight">Worksphere</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/70">
@@ -151,7 +151,7 @@ export default function LandingPage() {
       <footer className="bg-[#0A1628] text-white/50 py-12 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Worksphere" className="w-8 h-8" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-8 h-8" />
             <span className="text-white font-bold">Worksphere</span>
           </div>
           <div className="flex items-center gap-6 text-sm">

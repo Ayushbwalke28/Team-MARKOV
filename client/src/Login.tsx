@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff } from 'lucide-react';
+import api from './lib/api';
+import { useAuth } from './context/AuthContext';
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -12,9 +14,31 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { checkAuth } = useAuth();
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/home');
+    setError('');
+    setLoading(true);
+
+    try {
+      if (isSignUp) {
+        await api.post('/auth/register', { email, password });
+        // Optional: you could also update profile here with name
+        await checkAuth();
+        navigate('/home');
+      } else {
+        await api.post('/auth/login', { email: identifier, password: loginPassword });
+        await checkAuth();
+        navigate('/home');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,7 +51,7 @@ export default function Login() {
         </div>
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12">
-            <img src="/logo.png" alt="Worksphere" className="w-12 h-12" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-12 h-12" />
             <span className="text-2xl font-bold">Worksphere</span>
           </div>
           <h1 className="text-4xl xl:text-5xl font-black leading-[1.1] mb-6">
@@ -48,7 +72,7 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <img src="/logo.png" alt="Worksphere" className="w-10 h-10" />
+            <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-10 h-10" />
             <span className="text-xl font-bold text-[#0A1628]">Worksphere</span>
           </div>
 
@@ -72,6 +96,11 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-200">
+                {error}
+              </div>
+            )}
             {isSignUp ? (
               <>
                 <div>
@@ -117,8 +146,8 @@ export default function Login() {
                 </div>
               </>
             )}
-            <button type="submit" className="w-full bg-[#0A1628] hover:bg-[#101c2e] text-white py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#0A1628]/20 hover:shadow-xl">
-              {isSignUp ? 'Create Account' : 'Sign In'}
+            <button type="submit" disabled={loading} className="w-full bg-[#0A1628] hover:bg-[#101c2e] text-white py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#0A1628]/20 hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed">
+              {loading ? 'Processing...' : (isSignUp ? 'Create Account' : 'Sign In')}
             </button>
           </form>
 

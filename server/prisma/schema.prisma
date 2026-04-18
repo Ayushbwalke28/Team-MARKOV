@@ -19,20 +19,50 @@ enum Gender {
   prefer_not_to_say
 }
 
+enum OpportunityType {
+  job
+  internship
+  freelance
+}
+
+enum OpportunityMode {
+  online
+  onsite
+  hybrid
+}
+
+enum OpportunityStatus {
+  open
+  closed
+}
+
+enum AuthorType {
+  user
+  company
+}
+
 model User {
-  id               String   @id
-  email            String   @unique
+  id               String  @id
+  email            String  @unique
   name             String
   passwordHash     String
   refreshTokenHash String?
-  verified         Boolean  @default(false)
+  verified         Boolean @default(false)
+  avatarUrl        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile  UserProfile?
-  roles    UserRole[]
-  company  Company?
+  profile             UserProfile?
+  roles               UserRole[]
+  company             Company?
+  organizedEvents     Event[]        @relation("OrganizedEventsUser")
+  eventBookings       EventBooking[]
+  posts               Post[]         @relation("UserPosts")
+  postLikes           PostLike[]
+  postComments        PostComment[]
+  sentConnections     Connection[]   @relation("SentConnections")
+  receivedConnections Connection[]   @relation("ReceivedConnections")
 
   @@index([email])
 }
@@ -81,13 +111,13 @@ model Education {
   profileUserId String
   profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
 
-  institution String
-  degree      String?
+  institution  String
+  degree       String?
   fieldOfStudy String?
-  startDate   DateTime?
-  endDate     DateTime?
-  grade       String?
-  description String?
+  startDate    DateTime?
+  endDate      DateTime?
+  grade        String?
+  description  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,14 +131,14 @@ model Experience {
   profileUserId String
   profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
 
-  title       String
-  company     String?
-  location    String?
+  title          String
+  company        String?
+  location       String?
   employmentType String?
-  startDate   DateTime?
-  endDate     DateTime?
-  isCurrent   Boolean @default(false)
-  description String?
+  startDate      DateTime?
+  endDate        DateTime?
+  isCurrent      Boolean   @default(false)
+  description    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,13 +152,13 @@ model Certificate {
   profileUserId String
   profile       UserProfile @relation(fields: [profileUserId], references: [userId], onDelete: Cascade)
 
-  title        String
-  issuer       String?
-  issueDate    DateTime?
+  title          String
+  issuer         String?
+  issueDate      DateTime?
   expirationDate DateTime?
-  credentialId String?
-  credentialUrl String?
-  description  String?
+  credentialId   String?
+  credentialUrl  String?
+  description    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -145,8 +175,12 @@ model Company {
   description String?
   size        String?
   domain      String?
+  logoUrl     String?
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  opportunities   Opportunity[]
+  organizedEvents Event[]       @relation("OrganizedEventsCompany")
+  posts           Post[]        @relation("CompanyPosts")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -154,10 +188,151 @@ model Company {
   @@index([ownerId])
 }
 
-model Post {
-  id        String   @id
-  body      String
+model Opportunity {
+  id                   String            @id @default(cuid())
+  companyId            String
+  type                 OpportunityType
+  mode                 OpportunityMode
+  status               OpportunityStatus @default(open)
+  payment              String?
+  postName             String
+  description          String?
+  registrationDeadline DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([companyId])
 }
 
+model Post {
+  id              String     @id @default(cuid())
+  text            String
+  media           String[]
+  mediaUrl        String?
+  authorType      AuthorType
+  authorUserId    String?
+  authorCompanyId String?
+
+  authorUser    User?    @relation("UserPosts", fields: [authorUserId], references: [id], onDelete: Cascade)
+  authorCompany Company? @relation("CompanyPosts", fields: [authorCompanyId], references: [id], onDelete: Cascade)
+
+  likes    PostLike[]
+  comments PostComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorUserId])
+  @@index([authorCompanyId])
+  @@index([createdAt])
+}
+
+model PostLike {
+  id     String @id @default(cuid())
+  postId String
+  userId String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id     String @id @default(cuid())
+  postId String
+  userId String
+  text   String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+enum OrganizerType {
+  individual
+  company
+}
+
+enum EventMode {
+  online
+  offline
+  hybrid
+}
+
+model Event {
+  id                 String        @id @default(cuid())
+  title              String
+  description        String?
+  category           String?
+  organizerType      OrganizerType
+  organizerUserId    String?
+  organizerCompanyId String?
+  schedule           DateTime
+  fees               Float         @default(0)
+  mode               EventMode
+  venue              String?
+  onlinePlatform     String?
+  bannerUrl          String?
+
+  organizerUser    User?          @relation("OrganizedEventsUser", fields: [organizerUserId], references: [id], onDelete: Cascade)
+  organizerCompany Company?       @relation("OrganizedEventsCompany", fields: [organizerCompanyId], references: [id], onDelete: Cascade)
+  bookings         EventBooking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizerUserId])
+  @@index([organizerCompanyId])
+}
+
+model EventBooking {
+  id      String @id @default(cuid())
+  eventId String
+  userId  String
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+enum ConnectionStatus {
+  pending
+  accepted
+  declined
+}
+
+model Connection {
+  id         String           @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     ConnectionStatus @default(pending)
+
+  sender   User @relation("SentConnections", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}

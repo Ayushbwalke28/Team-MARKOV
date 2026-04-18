@@ -74,6 +74,13 @@ export class UsersService {
     });
   }
 
+  async setAvatar(userId: UserId, avatarUrl: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+  }
+
   async setOwnsCompany(userId: UserId, ownsCompany: boolean): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new ForbiddenException('User not found');

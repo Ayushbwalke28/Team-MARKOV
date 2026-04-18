@@ -5,12 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @Injectable()
 export class CompanyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
   async create(ownerId: string, dto: CreateCompanyDto) {
     // Guard: only users with company_owner role may create a company
@@ -88,12 +92,25 @@ export class CompanyService {
     });
   }
 
+  async setLogo(companyId: string, userId: string, logoUrl: string) {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (company.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: { logoUrl },
+    });
+  }
+
   async remove(id: string, requesterId: string) {
     const company = await this.prisma.company.findUnique({ where: { id } });
     if (!company) throw new NotFoundException('Company not found');
     if (company.ownerId !== requesterId) throw new ForbiddenException('Not your company');
 
     await this.prisma.company.delete({ where: { id } });
+    // Revoke the company_owner role since the user no longer owns a company
+    await this.usersService.setOwnsCompany(requesterId, false);
     return { ok: true };
   }
 }
