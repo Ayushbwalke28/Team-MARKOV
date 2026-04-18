@@ -6,8 +6,8 @@ describe('UsersService', () => {
       user: {
         create: jest.fn(async ({ data }: any) => data),
         findUnique: jest.fn(async ({ where }: any) => {
-          if (where.email === 'a@example.com') return { id: 'u1', email: 'a@example.com' };
-          if (where.id === 'u1') return { id: 'u1', email: 'a@example.com' };
+          if (where.email === 'a@example.com') return { id: 'u1', email: 'a@example.com', verified: false };
+          if (where.id === 'u1') return { id: 'u1', email: 'a@example.com', verified: false };
           return null;
         }),
         update: jest.fn(async ({ where, data }: any) => ({ ...where, ...data })),
@@ -15,16 +15,12 @@ describe('UsersService', () => {
     } as any;
 
     const users = new UsersService(prisma);
-    const now = new Date();
 
     await users.create({
       id: 'u1',
       email: 'a@example.com',
       name: 'Alice',
       passwordHash: 'x',
-      refreshTokenHash: null,
-      createdAt: now,
-      updatedAt: now,
     });
 
     expect(await users.findOneByEmail('a@example.com')).toMatchObject({ id: 'u1' });
@@ -38,6 +34,7 @@ describe('UsersService', () => {
       name: 'Alice',
       passwordHash: 'old',
       refreshTokenHash: null,
+      verified: false,
     };
 
     const prisma = {
@@ -56,16 +53,12 @@ describe('UsersService', () => {
     } as any;
 
     const users = new UsersService(prisma);
-    const now = new Date();
 
     await users.create({
       id: 'u1',
       email: 'a@example.com',
       name: 'Alice',
       passwordHash: 'old',
-      refreshTokenHash: null,
-      createdAt: now,
-      updatedAt: now,
     });
 
     await users.setRefreshTokenHash('u1', 'rt');
