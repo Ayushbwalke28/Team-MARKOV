@@ -9,18 +9,25 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CompanyService } from './company.service';
+import { MediaService } from '../media/media.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @Controller('companies')
 export class CompanyController {
-  constructor(private readonly companyService: CompanyService) {}
+  constructor(
+    private readonly companyService: CompanyService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   /**
    * POST /companies
@@ -81,5 +88,21 @@ export class CompanyController {
   @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string, @Req() req: any) {
     return this.companyService.remove(id, req.user.userId);
+  }
+
+  /**
+   * POST /companies/:id/logo
+   * Upload logo for a company. Authenticated owner only.
+   */
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/logo')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadLogo(
+    @Param('id') id: string,
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const result = await this.mediaService.uploadImage(file);
+    return this.companyService.setLogo(id, req.user.userId, result.secure_url);
   }
 }

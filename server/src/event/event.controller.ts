@@ -9,16 +9,23 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventService } from './event.service';
+import { MediaService } from '../media/media.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @Controller('events')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   // ── Static routes MUST come before :id wildcard ──
 
@@ -88,5 +95,17 @@ export class EventController {
   @Get(':id/bookings')
   getBookings(@Param('id') id: string, @Req() req: any) {
     return this.eventService.getBookings(id, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/banner')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadBanner(
+    @Param('id') id: string,
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const result = await this.mediaService.uploadImage(file);
+    return this.eventService.setBanner(id, req.user.userId, result.secure_url);
   }
 }

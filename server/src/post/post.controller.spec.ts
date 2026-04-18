@@ -6,6 +6,7 @@ jest.mock('@prisma/client', () => ({
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from './post.controller';
 import { PostService } from './post.service';
+import { MediaService } from '../media/media.service';
 
 const mockPostService = {
   create: jest.fn(),
@@ -18,6 +19,9 @@ const mockPostService = {
   getComments: jest.fn(),
   removeComment: jest.fn(),
 };
+const mockMediaService = {
+  uploadImage: jest.fn(),
+};
 
 describe('PostController', () => {
   let controller: PostController;
@@ -26,7 +30,10 @@ describe('PostController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PostController],
-      providers: [{ provide: PostService, useValue: mockPostService }],
+      providers: [
+        { provide: PostService, useValue: mockPostService },
+        { provide: MediaService, useValue: mockMediaService },
+      ],
     }).compile();
 
     controller = module.get<PostController>(PostController);

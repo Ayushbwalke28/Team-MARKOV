@@ -9,17 +9,24 @@ import {
   Post,
   Patch,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PostService } from './post.service';
+import { MediaService } from '../media/media.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -89,5 +96,17 @@ export class PostController {
     @Req() req: any,
   ) {
     return this.postService.removeComment(id, commentId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/media')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadMedia(
+    @Param('id') id: string,
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const result = await this.mediaService.uploadImage(file);
+    return this.postService.setMediaUrl(id, req.user.userId, result.secure_url);
   }
 }

@@ -48,6 +48,7 @@ model User {
   passwordHash     String
   refreshTokenHash String?
   verified         Boolean @default(false)
+  avatarUrl        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -172,6 +173,7 @@ model Company {
   description String?
   size        String?
   domain      String?
+  logoUrl     String?
 
   owner           User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   opportunities   Opportunity[]
@@ -207,6 +209,7 @@ model Post {
   id              String     @id @default(cuid())
   text            String
   media           String[]
+  mediaUrl        String?
   authorType      AuthorType
   authorUserId    String?
   authorCompanyId String?
@@ -280,6 +283,7 @@ model Event {
   mode               EventMode
   venue              String?
   onlinePlatform     String?
+  bannerUrl          String?
 
   organizerUser    User?          @relation("OrganizedEventsUser", fields: [organizerUserId], references: [id], onDelete: Cascade)
   organizerCompany Company?       @relation("OrganizedEventsCompany", fields: [organizerCompanyId], references: [id], onDelete: Cascade)

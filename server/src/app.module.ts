@@ -11,11 +11,11 @@ import { OpportunityModule } from './opportunity/opportunity.module';
 import { EventModule } from './event/event.module';
 import { PostModule } from './post/post.module';
 import { FeedModule } from './feed/feed.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule],
+  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

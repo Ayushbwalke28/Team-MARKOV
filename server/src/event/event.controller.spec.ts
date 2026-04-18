@@ -7,6 +7,7 @@ jest.mock('@prisma/client', () => ({
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventController } from './event.controller';
 import { EventService } from './event.service';
+import { MediaService } from '../media/media.service';
 
 const mockEventService = {
   create: jest.fn(),
@@ -16,6 +17,9 @@ const mockEventService = {
   remove: jest.fn(),
   bookEvent: jest.fn(),
   getBookings: jest.fn(),
+};
+const mockMediaService = {
+  uploadImage: jest.fn(),
 };
 
 describe('EventController', () => {
@@ -27,6 +31,7 @@ describe('EventController', () => {
       controllers: [EventController],
       providers: [
         { provide: EventService, useValue: mockEventService },
+        { provide: MediaService, useValue: mockMediaService },
       ],
     }).compile();
 

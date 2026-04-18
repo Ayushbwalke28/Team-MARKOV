@@ -92,6 +92,17 @@ export class CompanyService {
     });
   }
 
+  async setLogo(companyId: string, userId: string, logoUrl: string) {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (company.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    return this.prisma.company.update({
+      where: { id: companyId },
+      data: { logoUrl },
+    });
+  }
+
   async remove(id: string, requesterId: string) {
     const company = await this.prisma.company.findUnique({ where: { id } });
     if (!company) throw new NotFoundException('Company not found');

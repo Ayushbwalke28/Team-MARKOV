@@ -115,6 +115,29 @@ export class EventService {
     });
   }
 
+  async setBanner(eventId: string, userId: string, bannerUrl: string) {
+    const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found');
+
+    if (event.organizerType === 'individual') {
+      if (event.organizerUserId !== userId) {
+        throw new ForbiddenException('Not authorized');
+      }
+    } else {
+      const company = await this.prisma.company.findUnique({
+        where: { id: event.organizerCompanyId! },
+      });
+      if (company?.ownerId !== userId) {
+        throw new ForbiddenException('Not authorized');
+      }
+    }
+
+    return this.prisma.event.update({
+      where: { id: eventId },
+      data: { bannerUrl },
+    });
+  }
+
   async remove(id: string, userId: string) {
     await this.verifyOwnership(id, userId);
 

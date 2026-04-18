@@ -119,6 +119,18 @@ export class PostService {
     return { ok: true };
   }
 
+  async setMediaUrl(postId: string, userId: string, mediaUrl: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    await this.verifyOwnership(postId, userId);
+
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: { mediaUrl },
+      include: POST_INCLUDE,
+    });
+  }
+
   async like(postId: string, userId: string) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
