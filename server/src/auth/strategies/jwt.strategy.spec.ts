@@ -3,11 +3,17 @@ import { JwtStrategy } from './jwt.strategy';
 // Passport calls validate() after verifying the JWT signature.
 // We only need to test the validate() method's transformation logic here.
 
+import { UsersService } from '../../users/users.service';
+
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
+  let mockUsersService: Partial<UsersService>;
 
   beforeEach(() => {
-    strategy = new JwtStrategy();
+    mockUsersService = {
+      findByIdWithRoles: jest.fn().mockResolvedValue({ roles: [] }),
+    };
+    strategy = new JwtStrategy(mockUsersService as UsersService);
   });
 
   it('should be defined', () => {
@@ -20,7 +26,7 @@ describe('JwtStrategy', () => {
 
       const result = await strategy.validate(payload);
 
-      expect(result).toEqual({ userId: 'user-abc', email: 'alice@example.com' });
+      expect(result).toEqual({ userId: 'user-abc', email: 'alice@example.com', roles: [] });
     });
 
     it('should map payload.sub to userId', async () => {
@@ -44,7 +50,7 @@ describe('JwtStrategy', () => {
 
       const result = await strategy.validate(payload);
 
-      expect(Object.keys(result)).toEqual(['userId', 'email']);
+      expect(Object.keys(result)).toEqual(['userId', 'email', 'roles']);
     });
 
     it('should return a defined, non-null object', async () => {
