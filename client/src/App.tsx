@@ -20,7 +20,7 @@ import DealRoomView from './pages/DealRoomView.tsx';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { ThemeProvider } from './context/ThemeContext.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
-import ThemeToggle from './components/ThemeToggle.tsx';
+
 
 export default function App() {
   return (
@@ -59,7 +59,6 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-          <ThemeToggle />
         </Router>
       </AuthProvider>
     </ThemeProvider>

@@ -30,6 +30,8 @@
   --color-surface-low: hsl(210 21% 95%);
   --color-surface-lowest: hsl(0 0% 100%);
   --color-surface-high: hsl(211 14% 90%);
+  --color-surface-brand: hsl(216 60% 10%);
+  --color-surface-brand-foreground: hsl(0 0% 100%);
 
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", Georgia, serif;
@@ -76,22 +78,48 @@
 
 html.dark {
   color-scheme: dark;
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #000000;
+  --color-card-foreground: #ffffff;
+  --color-popover: #000000;
+  --color-popover-foreground: #ffffff;
+  --color-primary: #ffffff;
+  --color-primary-foreground: #000000;
+  --color-secondary: #111111;
+  --color-secondary-foreground: #ffffff;
+  --color-muted: #111111;
+  --color-muted-foreground: rgba(255, 255, 255, 0.6);
+  --color-accent: #111111;
+  --color-accent-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-input: #000000;
+  --color-ring: #ffffff;
+
+  /* Architectural Tokens for Dark Mode */
+  --color-surface-brand: #0a0a0a;
+  --color-surface-brand-foreground: #ffffff;
+  --color-surface: #000000;
+  --color-surface-low: #080808;
+  --color-surface-lowest: #000000;
+  --color-surface-high: #121212;
 }
 
 html.dark body,
 html.dark #root {
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
 }
 
+/* Specific overrides for hardcoded background classes */
 html.dark .bg-\[\#f7f9fb\],
 html.dark .bg-\[\#f2f4f6\],
 html.dark .bg-white,
 html.dark .bg-\[\#0A1628\],
 html.dark .bg-\[\#101c2e\],
 html.dark .bg-white\/5,
-html.dark .bg-white\/10 {
-  background-color: #000000 !important;
+html.dark .bg-chart-1 {
+  background-color: var(--color-background) !important;
 }
 
 html.dark .text-\[\#191c1e\],
@@ -99,19 +127,27 @@ html.dark .text-\[\#0A1628\],
 html.dark .text-\[\#45474c\],
 html.dark .text-\[\#75777d\],
 html.dark .text-white\/70,
-html.dark .text-white\/60,
-html.dark .text-white\/50,
-html.dark .text-white\/40,
-html.dark .text-white\/30 {
-  color: #ffffff !important;
+html.dark .text-white\/40 {
+  color: var(--color-foreground) !important;
 }
 
 html.dark .border-\[\#e0e3e5\],
 html.dark .border-white\/10,
 html.dark .border-white\/20,
-html.dark .border-white\/5,
 html.dark .border {
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: var(--color-border) !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--color-input) !important;
+  color: var(--color-foreground) !important;
+  border-color: var(--color-border) !important;
+}
+
+html.dark ::placeholder {
+  color: var(--color-muted-foreground);
 }
 
 html.dark .shadow-lg,
@@ -119,18 +155,6 @@ html.dark .shadow-xl,
 html.dark .shadow-2xl,
 html.dark .shadow-sm {
   box-shadow: none !important;
-}
-
-html.dark input,
-html.dark textarea,
-html.dark select {
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-}
-
-html.dark ::placeholder {
-  color: rgba(255, 255, 255, 0.6);
 }
 
 .brand-logo {
@@ -158,3 +182,13 @@ html.dark .brand-logo {
   50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.4); }
 }
 
+/* Compose modal animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(32px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
