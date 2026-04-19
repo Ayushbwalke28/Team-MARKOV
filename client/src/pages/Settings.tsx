@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -32,7 +32,9 @@ type ProfileMeResponse = {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuth();
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -47,9 +49,16 @@ export default function Settings() {
         setProfile(null);
       }
     };
-
     loadProfile();
   }, []);
+
+  // Auto-open section from URL query param (e.g. ?section=profile)
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section === 'profile') {
+      setActiveSection('Personal Information');
+    }
+  }, [searchParams]);
 
   const displayName = profile?.fullName || user?.name || 'User';
   const initial = displayName.charAt(0).toUpperCase() || 'U';
@@ -157,22 +166,47 @@ export default function Settings() {
         </div>
 
         {/* Setting Items */}
-        <div className="divide-y divide-[#f2f4f6]">
+        <div className="divide-y divide-border">
           {sections.map((s) => {
             const Icon = s.icon;
+            const isActive = activeSection === s.label;
             return (
-              <button key={s.label} className="w-full flex items-center justify-between p-6 hover:bg-[#fcfdfe] transition-colors group text-left">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-[#f7f9fb] flex items-center justify-center text-[#45474c] group-hover:bg-[#2563EB]/10 group-hover:text-[#2563EB] transition-colors">
-                    <Icon size={20} />
+              <div key={s.label}>
+                <button
+                  onClick={() => setActiveSection(isActive ? null : s.label)}
+                  className={`w-full flex items-center justify-between p-6 transition-colors group text-left ${isActive ? 'bg-primary/5' : 'hover:bg-secondary/60'}`}
+                  id={`settings-section-${s.label.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}>
+                      <Icon size={20} />
+                    </div>
+                    <div>
+                      <h4 className={`text-sm font-bold transition-colors ${isActive ? 'text-primary' : 'text-foreground'}`}>{s.label}</h4>
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-[#191c1e]">{s.label}</h4>
-                    <p className="text-xs text-[#75777d] mt-0.5">{s.desc}</p>
+                  <ChevronRight size={18} className={`transition-all ${isActive ? 'text-primary rotate-90' : 'text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1'}`} />
+                </button>
+                {/* Expanded placeholder panel */}
+                {isActive && (
+                  <div className="px-6 pb-6 bg-primary/5 border-t border-border">
+                    <div className="bg-card border border-border rounded-xl p-5 mt-4">
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {s.label === 'Personal Information'
+                          ? 'Update your full name, bio, education, experience, and profile photo above. More fields will be available in a future update.'
+                          : s.label === 'Security & Verification'
+                          ? 'Manage your verification status from the Verify tab in the sidebar. Two-factor authentication coming soon.'
+                          : s.label === 'Notifications'
+                          ? 'Notification preferences will be available in a future update.'
+                          : s.label === 'Privacy & Visibility'
+                          ? 'Control who can see your profile and activity. Privacy settings coming soon.'
+                          : 'Billing and subscription management coming soon.'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <ChevronRight size={18} className="text-[#c5c6cd] group-hover:text-[#2563EB] group-hover:translate-x-1 transition-all" />
-              </button>
+                )}
+              </div>
             );
           })}
         </div>

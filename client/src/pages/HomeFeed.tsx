@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ImageIcon, Send, CheckCircle2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, ImageIcon, Send, CheckCircle2, X, ChevronLeft, ChevronRight, Pencil, Link2, Video } from 'lucide-react';
 import api, { connectionApi, postApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -122,6 +122,7 @@ export default function HomeFeed() {
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
   const [newPostImagePreview, setNewPostImagePreview] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const [suggestedPeople, setSuggestedPeople] = useState<SuggestedPerson[]>([]);
   const [commentsByPost, setCommentsByPost] = useState<Record<string, CommentItem[]>>({});
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
@@ -252,6 +253,7 @@ export default function HomeFeed() {
       setPosts([created, ...posts]);
       setNewPost('');
       resetComposeMedia();
+      setComposeOpen(false);
       showToast('Post published successfully.', 'success');
     } catch (err) {
       console.error('Failed to publish post', err);
@@ -385,16 +387,17 @@ export default function HomeFeed() {
 
   return (
     <>
+      {/* Toast Notifications */}
       <div className="fixed top-20 right-4 z-50 flex flex-col gap-2 w-[min(90vw,340px)]">
         {toasts.map((toast) => (
           <div
             key={toast.id}
             className={`rounded-lg border px-3 py-2 text-xs shadow-lg backdrop-blur-sm ${
               toast.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                 : toast.type === 'error'
-                  ? 'bg-red-50 border-red-200 text-red-800'
-                  : 'bg-white border-[#e0e3e5] text-[#191c1e]'
+                  ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                  : 'bg-card border-border text-foreground'
             }`}
           >
             {toast.message}
@@ -402,60 +405,150 @@ export default function HomeFeed() {
         ))}
       </div>
 
-      <div className="max-w-6xl mx-auto flex gap-8">
-      {/* Main Feed */}
-      <div className="flex-1 max-w-2xl">
-        {/* Compose Box */}
-        <div className="bg-white rounded-xl border border-[#e0e3e5] p-5 mb-6">
-          <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0 uppercase">{user?.name?.charAt(0) || 'U'}</div>
-            <div className="flex-1">
+      {/* ── Floating Action Button (FAB) ─────────────────────────── */}
+      <button
+        onClick={() => setComposeOpen(true)}
+        className="fixed bottom-8 right-10 z-40 w-16 h-16 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/40 flex items-center justify-center hover:scale-110 hover:shadow-primary/60 active:scale-95 transition-all duration-200 group"
+        title="Create a post"
+        aria-label="Create post"
+      >
+        <Pencil size={26} className="group-hover:rotate-12 transition-transform duration-200" />
+      </button>
+
+      {/* ── Compose Modal ────────────────────────────────────────── */}
+      {composeOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6"
+          style={{ animation: 'fadeIn 0.2s ease' }}
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => { setComposeOpen(false); resetComposeMedia(); setNewPost(''); }}
+          />
+
+          {/* Modal */}
+          <div
+            className="relative w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+            style={{ animation: 'slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-surface-brand flex items-center justify-center text-surface-brand-foreground font-bold text-sm shrink-0 uppercase">
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground capitalize">{user?.name || 'You'}</p>
+                  <p className="text-[10px] text-muted-foreground">Share with your network</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setComposeOpen(false); resetComposeMedia(); setNewPost(''); }}
+                className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Share an insight, update or opportunity</p>
               <textarea
                 value={newPost}
                 onChange={(e) => setNewPost(e.target.value)}
-                placeholder="Share an insight, update, or opportunity..."
-                rows={3}
-                className="w-full bg-[#f7f9fb] rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 border border-[#e0e3e5] focus:border-[#2563EB]/30"
+                placeholder="What's on your mind? Share an insight, update or opportunity..."
+                rows={5}
+                autoFocus
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-all"
               />
+
+              {/* Image Preview */}
               {newPostImagePreview && (
-                <div className="mt-3 rounded-xl border border-[#e0e3e5] overflow-hidden bg-[#f7f9fb] p-2">
-                  <img src={newPostImagePreview} alt="Selected post media" className="max-h-64 w-full object-cover rounded-lg" />
+                <div className="mt-3 rounded-xl border border-border overflow-hidden bg-secondary relative group">
+                  <img src={newPostImagePreview} alt="Selected media" className="max-h-52 w-full object-cover" />
+                  <button
+                    onClick={resetComposeMedia}
+                    className="absolute top-2 right-2 p-1 rounded-lg bg-black/50 text-white hover:bg-black/70 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
-              <div className="flex items-center justify-between mt-3">
-                <div className="flex items-center gap-2">
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />
-                  <button onClick={() => fileInputRef.current?.click()} className="p-2 rounded-lg hover:bg-[#f2f4f6] text-[#75777d] transition-colors"><ImageIcon size={18} /></button>
-                </div>
-                <button onClick={handlePublish} disabled={isPublishing} className="bg-[#2563EB] disabled:bg-[#94b4f6] text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-[#1d4ed8] transition-colors flex items-center gap-1.5 shadow-sm">
-                  <Send size={14} /> Publish
+
+              {/* Attachments Row */}
+              <div className="flex items-center gap-2 mt-4">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mr-1">Attach</p>
+                <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleImagePick} />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 text-xs font-semibold transition-all"
+                >
+                  <ImageIcon size={14} /> Photo
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 text-xs font-semibold transition-all">
+                  <Video size={14} /> Video
+                </button>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 text-xs font-semibold transition-all">
+                  <Link2 size={14} /> Link
                 </button>
               </div>
             </div>
+
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-border flex items-center justify-between bg-secondary/40">
+              <p className="text-[10px] text-muted-foreground">
+                {newPost.length > 0 ? `${newPost.length} characters` : 'Your post will be visible to your network'}
+              </p>
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing || !newPost.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPublishing ? (
+                  <><div className="w-3.5 h-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> Publishing...</>
+                ) : (
+                  <><Send size={14} /> Publish</>  
+                )}
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
+      <div className="max-w-6xl mx-auto flex gap-8">
+      {/* Main Feed */}
+      <div className="flex-1 max-w-2xl">
+
+        {/* Posts - no inline compose box, FAB handles it */}
+        {posts.length === 0 && (
+          <div className="text-center py-16 text-muted-foreground">
+            <Pencil size={40} className="mx-auto mb-3 opacity-20" />
+            <p className="font-semibold">Nothing in your feed yet</p>
+            <p className="text-sm mt-1">Click the pencil button to share your first post!</p>
+          </div>
+        )}
         {/* Posts */}
         <div className="flex flex-col gap-4">
           {posts.map((post) => (
-            <div key={post.id} className="bg-white rounded-xl border border-[#e0e3e5] p-6 hover:shadow-md transition-shadow">
+            <div key={post.id} className="bg-card border border-border rounded-xl p-6 hover:shadow-md hover:shadow-foreground/5 transition-all duration-200">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs shrink-0">{post.authorInitials}</div>
+                  <div className="w-11 h-11 rounded-full bg-surface-brand flex items-center justify-center text-surface-brand-foreground font-bold text-xs shrink-0">{post.authorInitials}</div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold text-[#191c1e] capitalize">{post.authorName}</p>
-                      {post.authorUser?.verified && <CheckCircle2 size={14} className="text-[#2563EB] fill-[#2563EB]/10" />}
+                      <p className="text-sm font-bold text-foreground capitalize">{post.authorName}</p>
+                      {post.authorUser?.verified && <CheckCircle2 size={14} className="text-primary fill-primary/10" />}
                     </div>
-                    <p className="text-xs text-[#75777d]">{post.authorCompany ? 'Company' : 'Professional'}</p>
-                    <p className="text-[10px] text-[#c5c6cd]">{new Date(post.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{post.authorCompany ? 'Company' : 'Professional'}</p>
+                    <p className="text-[10px] text-muted-foreground/60">{new Date(post.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
-                <button className="p-1.5 rounded-lg hover:bg-[#f2f4f6] text-[#75777d]"><MoreHorizontal size={16} /></button>
+                <button className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground transition-colors"><MoreHorizontal size={16} /></button>
               </div>
-              <p className="text-sm text-[#191c1e] leading-relaxed whitespace-pre-line mb-5">{post.text}</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-line mb-5">{post.text}</p>
               {!!post.media?.length && (
-                <div className={`mb-5 grid gap-2 rounded-xl overflow-hidden border border-[#e0e3e5] bg-[#f7f9fb] p-2 ${post.media.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <div className={`mb-5 grid gap-2 rounded-xl overflow-hidden border border-border bg-secondary p-2 ${post.media.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                   {post.media.map((mediaUrl, idx) => (
                     <button
                       key={`${post.id}-media-${idx}`}
@@ -483,32 +576,32 @@ export default function HomeFeed() {
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between pt-4 border-t border-[#f2f4f6]">
+              <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="flex items-center gap-1">
-                  <button onClick={() => toggleLike(post.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${post.liked ? 'text-red-500 bg-red-50' : 'text-[#75777d] hover:bg-[#f2f4f6]'}`}>
+                  <button onClick={() => toggleLike(post.id)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${post.liked ? 'text-red-500 bg-red-500/10' : 'text-muted-foreground hover:bg-secondary'}`}>
                     <Heart size={15} className={post.liked ? 'fill-red-500' : ''} /> {post._count?.likes || 0}
                   </button>
-                  <button onClick={() => toggleComments(post.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#75777d] hover:bg-[#f2f4f6] transition-colors">
+                  <button onClick={() => toggleComments(post.id)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors">
                     <MessageCircle size={15} /> {post._count?.comments || 0}
                   </button>
-                  <button onClick={() => handleShare(post)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#75777d] hover:bg-[#f2f4f6] transition-colors">
+                  <button onClick={() => handleShare(post)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-secondary transition-colors">
                     <Share2 size={15} /> Share
                   </button>
                 </div>
-                <button onClick={() => toggleSave(post.id)} className={`p-1.5 rounded-lg transition-colors ${post.saved ? 'text-[#2563EB]' : 'text-[#75777d] hover:bg-[#f2f4f6]'}`}>
-                  <Bookmark size={16} className={post.saved ? 'fill-[#2563EB]' : ''} />
+                <button onClick={() => toggleSave(post.id)} className={`p-1.5 rounded-lg transition-colors ${post.saved ? 'text-primary' : 'text-muted-foreground hover:bg-secondary'}`}>
+                  <Bookmark size={16} className={post.saved ? 'fill-primary' : ''} />
                 </button>
               </div>
               {openComments[post.id] && (
-                <div className="mt-4 pt-4 border-t border-[#f2f4f6]">
-                  <div className="space-y-3 mb-3 max-h-52 overflow-auto pr-1">
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="space-y-3 mb-3 max-h-52 overflow-auto pr-1 scrollbar-none">
                     {(commentsByPost[post.id] || []).length === 0 ? (
-                      <p className="text-xs text-[#75777d]">No comments yet. Start the conversation.</p>
+                      <p className="text-xs text-muted-foreground">No comments yet. Start the conversation.</p>
                     ) : (
                       (commentsByPost[post.id] || []).map((comment) => (
-                        <div key={comment.id} className="bg-[#f7f9fb] rounded-lg px-3 py-2 border border-[#e0e3e5]">
-                          <p className="text-[11px] font-semibold text-[#191c1e]">{comment.user?.name || 'User'}</p>
-                          <p className="text-xs text-[#45474c] mt-1">{comment.text}</p>
+                        <div key={comment.id} className="bg-secondary rounded-lg px-3 py-2 border border-border">
+                          <p className="text-[11px] font-semibold text-foreground">{comment.user?.name || 'User'}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{comment.text}</p>
                         </div>
                       ))
                     )}
@@ -518,11 +611,11 @@ export default function HomeFeed() {
                       value={commentDrafts[post.id] || ''}
                       onChange={(e) => setCommentDrafts(prev => ({ ...prev, [post.id]: e.target.value }))}
                       placeholder="Write a comment..."
-                      className="flex-1 bg-[#f7f9fb] rounded-lg px-3 py-2 text-xs border border-[#e0e3e5] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20"
+                      className="flex-1 bg-secondary rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                     <button
                       onClick={() => addComment(post.id)}
-                      className="bg-[#2563EB] text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-[#1d4ed8]"
+                      className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-xs font-semibold hover:brightness-90 transition-all"
                     >
                       Send
                     </button>
@@ -536,12 +629,12 @@ export default function HomeFeed() {
 
       {/* Sidebar */}
       <div className="hidden lg:block w-72">
-        <div className="bg-white rounded-xl border border-[#e0e3e5] p-5 sticky top-24">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#45474c] mb-4">People You May Know</h3>
+        <div className="bg-card border border-border rounded-xl p-5 sticky top-24">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">People You May Know</h3>
           <div className="flex flex-col gap-4">
             {suggestedPeople.map((p) => (
               <div key={p.id} className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-[10px] shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-surface-brand flex items-center justify-center text-surface-brand-foreground font-bold text-[10px] shrink-0 overflow-hidden">
                   {p.avatarUrl ? (
                     <img src={p.avatarUrl} alt={p.name} className="w-full h-full object-cover" />
                   ) : (
@@ -549,14 +642,14 @@ export default function HomeFeed() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">{p.name}</p>
-                  <p className="text-[10px] text-[#75777d] truncate">{p.profile?.about || 'Professional'}</p>
+                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{p.profile?.about || 'Professional'}</p>
                 </div>
-                <button onClick={() => handleConnect(p.id)} className="text-[10px] font-bold text-[#2563EB] border border-[#2563EB]/30 px-3 py-1 rounded-full hover:bg-[#2563EB] hover:text-white transition-all">Connect</button>
+                <button onClick={() => handleConnect(p.id)} className="text-[10px] font-bold text-primary border border-primary/30 px-3 py-1 rounded-full hover:bg-primary hover:text-primary-foreground transition-all">Connect</button>
               </div>
             ))}
             {suggestedPeople.length === 0 && (
-              <p className="text-[11px] text-[#75777d] text-center py-3 bg-[#f7f9fb] rounded-lg">No suggestions available right now.</p>
+              <p className="text-[11px] text-muted-foreground text-center py-3 bg-secondary rounded-lg">No suggestions available right now.</p>
             )}
           </div>
         </div>
