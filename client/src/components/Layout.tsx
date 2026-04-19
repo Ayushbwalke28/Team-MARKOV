@@ -39,7 +39,7 @@ export default function Layout() {
       <aside
         onMouseEnter={() => setSidebarExpanded(true)}
         onMouseLeave={() => setSidebarExpanded(false)}
-        className={`${sidebarExpanded ? 'w-72' : 'w-20'} fixed h-screen left-0 top-0 bg-surface-brand text-surface-brand-foreground flex flex-col transition-all duration-500 ease-out z-20 shadow-2xl`}
+        className={`${sidebarExpanded ? 'w-72' : 'w-20'} fixed h-screen left-0 top-0 bg-surface-brand text-surface-brand-foreground flex flex-col transition-all duration-500 ease-out z-20 shadow-2xl scrollbar-none`}
       >
         {/* Logo */}
         <div className={`flex items-center h-16 border-b border-surface-brand-foreground/10 ${sidebarExpanded ? 'px-5 justify-start' : 'px-0 justify-center'}`}>

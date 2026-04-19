@@ -81,33 +81,33 @@ export default function AIAssistant() {
 
   return (
     <div className="flex flex-col gap-8 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between bg-[#0A1628] rounded-2xl p-8 text-white relative overflow-hidden shadow-xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#2563EB] rounded-full blur-[100px] opacity-20" />
+      <div className="flex items-center justify-between bg-white dark:bg-slate-800/50 rounded-2xl p-8 text-slate-900 dark:text-white relative overflow-hidden border border-slate-200 dark:border-slate-700/50 shadow-sm">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="relative z-10 max-w-xl">
           <div className="flex items-center gap-2 mb-4">
-            <Bot size={20} className="text-[#2563EB]" />
-            <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB]">Intelligent Ledger Insights</span>
+            <Bot size={20} className="text-blue-600" />
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-600">Intelligent Ledger Insights</span>
           </div>
           <h2 className="text-3xl font-black mb-4 leading-tight">Your AI-Powered Professional Growth Agent</h2>
-          <p className="text-white/60 text-sm leading-relaxed mb-6">
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
             Leverage advanced analytics and peer-benchmarking to optimize your strategy, discover exclusive opportunities, and grow your professional presence.
           </p>
           <div className="flex items-center gap-3">
-            <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/10 flex items-center gap-2">
-              <Sparkles size={14} className="text-[#F59E0B]" />
+            <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700/50 flex items-center gap-2">
+              <Sparkles size={14} className="text-amber-500" />
               <span className="text-xs font-semibold">Verified Insights Only</span>
             </div>
-            <div className="px-4 py-2 bg-white/10 rounded-lg border border-white/10 flex items-center gap-2">
-              <Zap size={14} className="text-[#10B981]" />
+            <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700/50 flex items-center gap-2">
+              <Zap size={14} className="text-emerald-500" />
               <span className="text-xs font-semibold">Real-time Analysis</span>
             </div>
           </div>
         </div>
-        <div className="hidden md:flex flex-col items-center justify-center p-6 bg-white/5 backdrop-blur border border-white/10 rounded-2xl relative z-10 shrink-0">
-          <div className="w-16 h-16 rounded-full bg-[#2563EB] flex items-center justify-center mb-3 shadow-lg shadow-[#2563EB]/40">
-            <Bot size={32} />
+        <div className="hidden md:flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/50 backdrop-blur border border-slate-200 dark:border-slate-700/50 rounded-2xl relative z-10 shrink-0">
+          <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mb-3 shadow-lg shadow-blue-600/20">
+            <Bot size={32} className="text-white" />
           </div>
-          <span className="text-xs font-bold">Online</span>
+          <span className="text-xs font-bold text-slate-500">Online</span>
         </div>
       </div>
 

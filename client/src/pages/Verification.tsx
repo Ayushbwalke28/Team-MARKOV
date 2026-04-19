@@ -3,6 +3,7 @@ import DocumentUpload from '../components/verification/DocumentUpload';
 import CameraCapture from '../components/verification/CameraCapture';
 import VerificationStatusBadge from '../components/verification/VerificationStatus';
 import { verificationApi } from '../lib/api';
+import { ShieldCheck, Fingerprint, FileText, CheckCircle2, AlertCircle, Loader2, RefreshCw, ChevronRight, Scale, Clock, Lock } from 'lucide-react';
 
 type Step = 'consent' | 'document' | 'face' | 'processing' | 'result';
 
@@ -14,12 +15,12 @@ const DOC_TYPES = [
   { value: 'national_id', label: 'National ID', icon: '🆔', needsBack: true },
 ];
 
-const STEPS: { key: Step; label: string }[] = [
-  { key: 'consent', label: 'Consent' },
-  { key: 'document', label: 'Document' },
-  { key: 'face', label: 'Face' },
-  { key: 'processing', label: 'Processing' },
-  { key: 'result', label: 'Result' },
+const STEPS: { key: Step; label: string; icon: any }[] = [
+  { key: 'consent', label: 'Consent', icon: Scale },
+  { key: 'document', label: 'ID Document', icon: FileText },
+  { key: 'face', label: 'Liveness', icon: Fingerprint },
+  { key: 'processing', label: 'Verification', icon: ShieldCheck },
+  { key: 'result', label: 'Complete', icon: CheckCircle2 },
 ];
 
 export default function Verification() {
@@ -34,7 +35,6 @@ export default function Verification() {
   const [consentInfo, setConsentInfo] = useState<any>(null);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
-  // Check existing verification status on mount
   useEffect(() => {
     (async () => {
       try {
@@ -57,7 +57,6 @@ export default function Verification() {
     })();
   }, []);
 
-  // Start session
   const handleStart = async () => {
     if (!consentChecked || !docType) return;
     setError(null);
@@ -74,7 +73,6 @@ export default function Verification() {
     }
   };
 
-  // Upload document
   const handleDocumentUpload = async (front: File, back?: File) => {
     if (!sessionId) return;
     setError(null);
@@ -94,7 +92,6 @@ export default function Verification() {
     }
   };
 
-  // Capture face
   const handleFaceCapture = async (blob: Blob) => {
     if (!sessionId) return;
     setError(null);
@@ -112,7 +109,6 @@ export default function Verification() {
     }
   };
 
-  // Retry
   const handleRetry = () => {
     setStep('consent');
     setSessionId(null);
@@ -125,12 +121,10 @@ export default function Verification() {
 
   if (checkingStatus) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <div style={styles.loadingContainer}>
-            <div style={styles.loadingSpinner} />
-            <p style={styles.loadingText}>Checking verification status...</p>
-          </div>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+          <p className="text-slate-500 font-medium animate-pulse">Initializing secure session...</p>
         </div>
       </div>
     );
@@ -140,358 +134,342 @@ export default function Verification() {
   const selectedDoc = DOC_TYPES.find((d) => d.value === docType);
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div style={styles.header}>
-          <h1 style={styles.title}>🛡️ Identity Verification</h1>
-          <p style={styles.headerSub}>Verify your identity to unlock all features</p>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-200 dark:shadow-none mb-6">
+            <ShieldCheck size={32} />
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+            Institutional Identity Verification
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Complete our high-trust verification process to unlock full platform capabilities and professional features.
+          </p>
         </div>
 
-        {/* Step indicator */}
-        <div style={styles.stepBar}>
-          {STEPS.map((s, i) => (
-            <div key={s.key} style={styles.stepItem}>
-              <div style={{
-                ...styles.stepDot,
-                ...(i <= stepIndex ? styles.stepDotActive : {}),
-                ...(i < stepIndex ? styles.stepDotComplete : {}),
-              }}>
-                {i < stepIndex ? '✓' : i + 1}
-              </div>
-              <span style={{
-                ...styles.stepLabel,
-                ...(i <= stepIndex ? styles.stepLabelActive : {}),
-              }}>{s.label}</span>
-              {i < STEPS.length - 1 && (
-                <div style={{
-                  ...styles.stepLine,
-                  ...(i < stepIndex ? styles.stepLineActive : {}),
-                }} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Error banner */}
-        {error && (
-          <div style={styles.errorBanner}>
-            <span>⚠️</span> {error}
-          </div>
-        )}
-
-        {/* Step: Consent */}
-        {step === 'consent' && (
-          <div style={styles.stepContent}>
-            <h2 style={styles.stepTitle}>Privacy Consent & ID Selection</h2>
-
-            {/* ID Type selector */}
-            <div style={styles.docTypeGrid}>
-              {DOC_TYPES.map((dt) => (
-                <button
-                  key={dt.value}
-                  style={{
-                    ...styles.docTypeCard,
-                    ...(docType === dt.value ? styles.docTypeCardSelected : {}),
-                  }}
-                  onClick={() => setDocType(dt.value)}
-                  aria-label={`Select ${dt.label}`}
-                >
-                  <span style={styles.docTypeIcon}>{dt.icon}</span>
-                  <span style={styles.docTypeLabel}>{dt.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Consent disclosure */}
-            <div style={styles.consentBox}>
-              <h3 style={styles.consentTitle}>📋 Data Processing Disclosure</h3>
-              {consentInfo?.disclosure ? (
-                <ul style={styles.consentList}>
-                  {consentInfo.disclosure.map((item: string, i: number) => (
-                    <li key={i} style={styles.consentItem}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p style={styles.consentItem}>
-                  Your biometric and identity data will be processed for verification purposes only.
-                  Raw data is deleted after processing. You may request deletion at any time.
-                </p>
-              )}
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={consentChecked}
-                  onChange={(e) => setConsentChecked(e.target.checked)}
-                  style={styles.checkbox}
-                />
-                <span>I understand and consent to the processing of my data as described above.</span>
-              </label>
-            </div>
-
-            <button
-              style={{
-                ...styles.primaryBtn,
-                ...(!consentChecked || !docType || loading ? styles.btnDisabled : {}),
-              }}
-              disabled={!consentChecked || !docType || loading}
-              onClick={handleStart}
-            >
-              {loading ? 'Starting...' : 'Begin Verification'}
-            </button>
-          </div>
-        )}
-
-        {/* Step: Document Upload */}
-        {step === 'document' && (
-          <div style={styles.stepContent}>
-            <h2 style={styles.stepTitle}>Upload Your {selectedDoc?.label || 'Document'}</h2>
-            <p style={styles.stepSub}>
-              Take a clear photo or scan of your document. Ensure all text is readable.
-            </p>
-
-            <DocumentUpload
-              onUpload={handleDocumentUpload}
-              requiresBack={selectedDoc?.needsBack || false}
-              isUploading={loading}
+        {/* Step Indicator */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm mb-8 overflow-hidden">
+          <div className="flex items-center justify-between relative">
+            {/* Progress Line */}
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 z-0" />
+            <div 
+              className="absolute top-1/2 left-0 h-0.5 bg-indigo-600 transition-all duration-500 ease-in-out z-0" 
+              style={{ width: `${(stepIndex / (STEPS.length - 1)) * 100}%` }}
             />
 
-            {/* OCR Preview */}
-            {ocrData && (
-              <div style={styles.ocrPreview}>
-                <h3 style={styles.ocrTitle}>📝 Extracted Information</h3>
-                <div style={styles.ocrGrid}>
-                  {ocrData.name && <div style={styles.ocrField}><span style={styles.ocrLabel}>Name</span><span>{ocrData.name}</span></div>}
-                  {ocrData.dob && <div style={styles.ocrField}><span style={styles.ocrLabel}>Date of Birth</span><span>{ocrData.dob}</span></div>}
-                  {ocrData.idNumber && <div style={styles.ocrField}><span style={styles.ocrLabel}>ID Number</span><span>{ocrData.idNumber}</span></div>}
-                  {ocrData.expiry && <div style={styles.ocrField}><span style={styles.ocrLabel}>Expiry</span><span>{ocrData.expiry}</span></div>}
+            {STEPS.map((s, i) => {
+              const Icon = s.icon;
+              const isActive = i <= stepIndex;
+              const isCurrent = i === stepIndex;
+              return (
+                <div key={s.key} className="relative z-10 flex flex-col items-center group">
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                    ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 text-slate-400'}
+                    ${isCurrent ? 'ring-4 ring-indigo-50 dark:ring-indigo-900/20 scale-110' : ''}
+                  `}>
+                    {i < stepIndex ? <CheckCircle2 size={18} /> : <Icon size={18} />}
+                  </div>
+                  <span className={`
+                    absolute top-12 text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-colors
+                    ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}
+                  `}>
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden relative">
+          
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-500/10 border-b border-red-100 dark:border-red-500/20 p-4 flex items-center gap-3 animate-in slide-in-from-top duration-300">
+              <AlertCircle className="text-red-500 shrink-0" size={20} />
+              <p className="text-sm font-medium text-red-600 dark:text-red-500">{error}</p>
+            </div>
+          )}
+
+          <div className="p-8 sm:p-10">
+            {/* Step: Consent */}
+            {step === 'consent' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Select Your Document Type</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Choose the official document you will use for verification.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {DOC_TYPES.map((dt) => (
+                    <button
+                      key={dt.value}
+                      onClick={() => setDocType(dt.value)}
+                      className={`
+                        flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 text-left
+                        ${docType === dt.value 
+                          ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-500/10 ring-1 ring-indigo-600' 
+                          : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-slate-50/30 dark:bg-slate-900'}
+                      `}
+                    >
+                      <span className="text-2xl">{dt.icon}</span>
+                      <div>
+                        <p className={`font-bold text-sm ${docType === dt.value ? 'text-indigo-900 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>
+                          {dt.label}
+                        </p>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">Official ID</p>
+                      </div>
+                      {docType === dt.value && <CheckCircle2 className="ml-auto text-indigo-600" size={18} />}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Scale className="text-indigo-600" size={18} />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Data Processing Disclosure</h3>
+                  </div>
+                  
+                  <div className="space-y-3 mb-6">
+                    {consentInfo?.disclosure ? (
+                      consentInfo.disclosure.map((item: string, i: number) => (
+                        <div key={i} className="flex gap-3 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                          <span className="text-indigo-600 font-bold">•</span>
+                          {item}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Your biometric and identity data will be processed for verification purposes only.
+                        Raw data is deleted after processing. You may request deletion at any time.
+                      </p>
+                    )}
+                  </div>
+
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={consentChecked}
+                        onChange={(e) => setConsentChecked(e.target.checked)}
+                        className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 dark:border-slate-700 checked:bg-indigo-600 transition-all"
+                      />
+                      <CheckCircle2 className="absolute h-5 w-5 text-white scale-0 peer-checked:scale-100 transition-transform pointer-events-none" size={14} />
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                      I understand and consent to the processing of my biometric and identity data as described above.
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  disabled={!consentChecked || !docType || loading}
+                  onClick={handleStart}
+                  className={`
+                    w-full py-4 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2
+                    ${!consentChecked || !docType || loading 
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200 dark:shadow-none'}
+                  `}
+                >
+                  {loading ? <Loader2 className="animate-spin" size={18} /> : null}
+                  Begin Secure Verification
+                </button>
+              </div>
+            )}
+
+            {/* Step: Document Upload */}
+            {step === 'document' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Upload Your {selectedDoc?.label}</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Ensure the document is well-lit and all details are clearly visible.</p>
+                </div>
+
+                <div className="p-2 bg-slate-50 dark:bg-slate-800/30 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700 transition-colors">
+                  <DocumentUpload
+                    onUpload={handleDocumentUpload}
+                    requiresBack={selectedDoc?.needsBack || false}
+                    isUploading={loading}
+                  />
+                </div>
+
+                {ocrData && (
+                  <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl p-6 border border-emerald-100 dark:border-emerald-500/20">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-4 flex items-center gap-2">
+                      <CheckCircle2 size={12} /> Automatically Extracted Data
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6">
+                      {ocrData.name && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Full Name</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{ocrData.name}</p>
+                        </div>
+                      )}
+                      {ocrData.idNumber && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Document Number</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{ocrData.idNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step: Face Capture */}
+            {step === 'face' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Biometric Verification</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Position your face in the frame and follow the liveness instructions.</p>
+                </div>
+                <div className="overflow-hidden rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950">
+                  <CameraCapture onCapture={handleFaceCapture} isProcessing={loading} />
                 </div>
               </div>
             )}
-          </div>
-        )}
 
-        {/* Step: Face Capture */}
-        {step === 'face' && (
-          <div style={styles.stepContent}>
-            <h2 style={styles.stepTitle}>Face Verification</h2>
-            <p style={styles.stepSub}>
-              Complete the liveness challenges, then capture a clear selfie.
-            </p>
-            <CameraCapture onCapture={handleFaceCapture} isProcessing={loading} />
-          </div>
-        )}
+            {/* Step: Processing */}
+            {step === 'processing' && (
+              <div className="py-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
+                <div className="relative w-32 h-32 mx-auto">
+                  <div className="absolute inset-0 border-4 border-indigo-100 dark:border-indigo-900/30 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ShieldCheck className="text-indigo-600 animate-pulse" size={48} />
+                  </div>
+                </div>
+                
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">AI Identity Validation</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                    We're securely comparing your biometric data with your official identification document...
+                  </p>
+                </div>
 
-        {/* Step: Processing */}
-        {step === 'processing' && (
-          <div style={styles.stepContent}>
-            <div style={styles.processingContainer}>
-              <div style={styles.processingAnimation}>
-                <div style={styles.processingRing} />
-                <div style={styles.processingRing2} />
-                <span style={styles.processingIcon}>🔍</span>
+                <div className="max-w-xs mx-auto space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <CheckCircle2 className="text-emerald-500" size={16} />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Document integrity verified</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <CheckCircle2 className="text-emerald-500" size={16} />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Liveness check passed</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
+                    <Loader2 className="text-indigo-600 animate-spin" size={16} />
+                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">Performing face matching...</span>
+                  </div>
+                </div>
               </div>
-              <h2 style={styles.processingTitle}>Verifying Your Identity</h2>
-              <p style={styles.processingSub}>
-                We're comparing your selfie with your document photo...
-              </p>
-              <div style={styles.processingSteps}>
-                <div style={styles.processingStep}>✅ Document validated</div>
-                <div style={styles.processingStep}>✅ Liveness check complete</div>
-                <div style={{...styles.processingStep, color: '#8b5cf6'}}>⏳ Face matching in progress...</div>
-              </div>
-            </div>
-          </div>
-        )}
+            )}
 
-        {/* Step: Result */}
-        {step === 'result' && result && (
-          <div style={styles.stepContent}>
-            <div style={styles.resultContainer}>
-              {(result.status === 'passed') && (
-                <>
-                  <div style={styles.resultIconSuccess}>✅</div>
-                  <h2 style={styles.resultTitle}>Verification Successful!</h2>
-                  <p style={styles.resultSub}>Your identity has been verified. You now have full access.</p>
-                  <VerificationStatusBadge status="passed" size="lg" />
-                  {result.confidence != null && (
-                    <div style={styles.confidenceBadge}>
-                      Confidence: {(result.confidence * 100).toFixed(0)}%
+            {/* Step: Result */}
+            {step === 'result' && result && (
+              <div className="py-8 text-center animate-in fade-in zoom-in-95 duration-700">
+                {result.status === 'passed' && (
+                  <div className="space-y-8">
+                    <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                      <CheckCircle2 size={56} className="animate-in zoom-in duration-500" />
                     </div>
-                  )}
-                </>
-              )}
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Verification Passed</h2>
+                      <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        Your identity has been cryptographically verified. You now have full access to the platform.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center gap-4">
+                      <VerificationStatusBadge status="passed" size="lg" />
+                      {result.confidence != null && (
+                        <div className="px-4 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest rounded-full">
+                          Trust Confidence: {(result.confidence * 100).toFixed(0)}%
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-              {result.status === 'failed' && (
-                <>
-                  <div style={styles.resultIconFail}>❌</div>
-                  <h2 style={styles.resultTitle}>Verification Failed</h2>
-                  <p style={styles.resultSub}>
-                    {result.failureReason || result.reason || 'Your identity could not be verified.'}
-                  </p>
-                  <VerificationStatusBadge status="failed" size="lg" />
-                  <button style={styles.primaryBtn} onClick={handleRetry}>
-                    🔄 Try Again
-                  </button>
-                </>
-              )}
+                {result.status === 'failed' && (
+                  <div className="space-y-8">
+                    <div className="w-24 h-24 bg-red-100 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-600">
+                      <AlertCircle size={56} />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Verification Failed</h2>
+                      <p className="text-red-600 dark:text-red-500 font-medium">
+                        {result.failureReason || result.reason || 'Your identity could not be verified.'}
+                      </p>
+                    </div>
+                    <VerificationStatusBadge status="failed" size="lg" />
+                    <button 
+                      onClick={handleRetry}
+                      className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+                    >
+                      <RefreshCw size={18} /> Restart Verification
+                    </button>
+                  </div>
+                )}
 
-              {result.status === 'manual_review' && (
-                <>
-                  <div style={styles.resultIconReview}>👁️</div>
-                  <h2 style={styles.resultTitle}>Under Manual Review</h2>
-                  <p style={styles.resultSub}>
-                    Your verification requires additional review. We'll notify you within 24 hours.
-                  </p>
-                  <VerificationStatusBadge status="manual_review" size="lg" />
-                </>
-              )}
+                {result.status === 'manual_review' && (
+                  <div className="space-y-8">
+                    <div className="w-24 h-24 bg-amber-100 dark:bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-600">
+                      <Clock size={56} />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Manual Review Required</h2>
+                      <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        Your verification requires additional review by our compliance team. We'll notify you within 24 hours.
+                      </p>
+                    </div>
+                    <VerificationStatusBadge status="manual_review" size="lg" />
+                  </div>
+                )}
 
-              {result.status === 'locked' && (
-                <>
-                  <div style={styles.resultIconFail}>🔒</div>
-                  <h2 style={styles.resultTitle}>Verification Locked</h2>
-                  <p style={styles.resultSub}>
-                    Maximum attempts exceeded. Please contact support for assistance.
-                  </p>
-                  <VerificationStatusBadge status="locked" size="lg" />
-                </>
-              )}
+                {result.status === 'locked' && (
+                  <div className="space-y-8">
+                    <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-600 dark:text-slate-400">
+                      <Lock size={56} />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Account Locked</h2>
+                      <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        Maximum verification attempts exceeded. Please contact institutional support for further assistance.
+                      </p>
+                    </div>
+                    <VerificationStatusBadge status="locked" size="lg" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Footer Info */}
+          <div className="bg-slate-50 dark:bg-slate-950/50 p-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-center gap-8">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Lock size={12} /> 256-bit AES Encryption
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <ShieldCheck size={12} /> GDPR Compliant
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Scale size={12} /> Regulatory Verified
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Support Link */}
+        <div className="text-center mt-10">
+          <p className="text-xs text-slate-400">
+            Need help? <a href="#" className="text-indigo-600 font-bold hover:underline">Contact Institutional Support</a>
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: '100vh', display: 'flex', justifyContent: 'center',
-    padding: '40px 16px', background: 'var(--bg-primary, #0f172a)',
-  },
-  card: {
-    width: '100%', maxWidth: '640px',
-    background: 'rgba(30, 41, 59, 0.7)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '24px',
-    border: '1px solid rgba(139, 92, 246, 0.15)',
-    padding: '32px',
-    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3)',
-    alignSelf: 'flex-start',
-  },
-  header: { textAlign: 'center', marginBottom: '28px' },
-  title: { fontSize: '24px', fontWeight: 800, color: '#e2e8f0', margin: '0 0 6px' },
-  headerSub: { fontSize: '14px', color: '#94a3b8', margin: 0 },
-  stepBar: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    gap: '0', marginBottom: '32px', flexWrap: 'wrap',
-  },
-  stepItem: {
-    display: 'flex', alignItems: 'center', gap: '6px',
-  },
-  stepDot: {
-    width: '28px', height: '28px', borderRadius: '50%', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700,
-    background: 'rgba(148, 163, 184, 0.15)', color: '#64748b',
-    transition: 'all 0.3s ease', flexShrink: 0,
-  },
-  stepDotActive: { background: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' },
-  stepDotComplete: { background: '#10b981', color: '#fff' },
-  stepLabel: { fontSize: '11px', color: '#64748b', fontWeight: 500 },
-  stepLabelActive: { color: '#e2e8f0' },
-  stepLine: {
-    width: '20px', height: '2px', background: 'rgba(148, 163, 184, 0.2)',
-    margin: '0 4px', transition: 'all 0.3s ease',
-  },
-  stepLineActive: { background: '#10b981' },
-  errorBanner: {
-    display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 16px',
-    background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)',
-    borderRadius: '12px', color: '#ef4444', fontSize: '14px', marginBottom: '20px',
-  },
-  stepContent: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  stepTitle: { fontSize: '18px', fontWeight: 700, color: '#e2e8f0', margin: 0 },
-  stepSub: { fontSize: '14px', color: '#94a3b8', margin: 0, lineHeight: 1.5 },
-  docTypeGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '12px',
-  },
-  docTypeCard: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
-    padding: '16px 12px', background: 'rgba(148, 163, 184, 0.05)',
-    border: '2px solid rgba(148, 163, 184, 0.1)', borderRadius: '14px',
-    cursor: 'pointer', transition: 'all 0.3s ease', color: '#e2e8f0',
-  },
-  docTypeCardSelected: {
-    borderColor: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)',
-    boxShadow: '0 0 20px rgba(139, 92, 246, 0.15)',
-  },
-  docTypeIcon: { fontSize: '28px' },
-  docTypeLabel: { fontSize: '12px', fontWeight: 600, textAlign: 'center' },
-  consentBox: {
-    padding: '20px', background: 'rgba(139, 92, 246, 0.05)',
-    border: '1px solid rgba(139, 92, 246, 0.15)', borderRadius: '14px',
-  },
-  consentTitle: { fontSize: '15px', fontWeight: 600, color: '#e2e8f0', margin: '0 0 12px' },
-  consentList: { margin: '0 0 16px', paddingLeft: '20px' },
-  consentItem: { fontSize: '13px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '4px' },
-  checkboxLabel: {
-    display: 'flex', alignItems: 'flex-start', gap: '10px',
-    fontSize: '13px', color: '#e2e8f0', cursor: 'pointer', fontWeight: 500,
-  },
-  checkbox: { marginTop: '2px', accentColor: '#8b5cf6' },
-  primaryBtn: {
-    padding: '14px 28px', fontSize: '15px', fontWeight: 600, color: '#fff',
-    background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-    border: 'none', borderRadius: '12px', cursor: 'pointer',
-    transition: 'all 0.3s ease', alignSelf: 'center',
-  },
-  btnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
-  ocrPreview: {
-    padding: '16px', background: 'rgba(16, 185, 129, 0.05)',
-    border: '1px solid rgba(16, 185, 129, 0.15)', borderRadius: '14px',
-  },
-  ocrTitle: { fontSize: '14px', fontWeight: 600, color: '#10b981', margin: '0 0 12px' },
-  ocrGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
-  ocrField: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  ocrLabel: { fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' },
-  processingContainer: { textAlign: 'center', padding: '40px 0' },
-  processingAnimation: { position: 'relative', width: '120px', height: '120px', margin: '0 auto 24px' },
-  processingRing: {
-    position: 'absolute', inset: 0, border: '3px solid rgba(139, 92, 246, 0.2)',
-    borderTopColor: '#8b5cf6', borderRadius: '50%',
-    animation: 'spin 1.5s linear infinite',
-  },
-  processingRing2: {
-    position: 'absolute', inset: '10px', border: '3px solid rgba(16, 185, 129, 0.2)',
-    borderBottomColor: '#10b981', borderRadius: '50%',
-    animation: 'spin 2s linear infinite reverse',
-  },
-  processingIcon: {
-    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-    fontSize: '36px',
-  },
-  processingTitle: { fontSize: '20px', fontWeight: 700, color: '#e2e8f0', margin: '0 0 8px' },
-  processingSub: { fontSize: '14px', color: '#94a3b8', margin: '0 0 20px' },
-  processingSteps: { display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' },
-  processingStep: { fontSize: '13px', color: '#10b981', fontWeight: 500 },
-  resultContainer: {
-    textAlign: 'center', padding: '40px 0',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-  },
-  resultIconSuccess: { fontSize: '64px' },
-  resultIconFail: { fontSize: '64px' },
-  resultIconReview: { fontSize: '64px' },
-  resultTitle: { fontSize: '22px', fontWeight: 700, color: '#e2e8f0', margin: 0 },
-  resultSub: { fontSize: '14px', color: '#94a3b8', maxWidth: '400px', lineHeight: 1.6, margin: 0 },
-  confidenceBadge: {
-    padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
-    color: '#10b981', background: 'rgba(16, 185, 129, 0.1)',
-  },
-  loadingContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', gap: '16px' },
-  loadingSpinner: {
-    width: '40px', height: '40px', border: '3px solid rgba(139, 92, 246, 0.2)',
-    borderTopColor: '#8b5cf6', borderRadius: '50%', animation: 'spin 1s linear infinite',
-  },
-  loadingText: { fontSize: '14px', color: '#94a3b8' },
-};

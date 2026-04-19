@@ -165,7 +165,7 @@ export default function DealRoomView() {
         <div className="bg-slate-50 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl p-8 relative overflow-hidden shadow-sm dark:shadow-none">
           {/* Glassmorphism blur overlay over content */}
           <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-10 p-6 text-center">
-            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-500/20 rounded-full flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
               <span className="text-2xl">📝</span>
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">NDA Required</h2>

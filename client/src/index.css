@@ -11,8 +11,8 @@
   --color-popover-foreground: hsl(204 9% 11%);
   --color-primary: hsl(216 52% 14%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(207 74% 42%);
-  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(210 20% 96%);
+  --color-secondary-foreground: hsl(215 28% 17%);
   --color-muted: hsl(210 21% 95%);
   --color-muted-foreground: hsl(219 12% 32%);
   --color-accent: hsl(210 17% 96%);
@@ -62,6 +62,15 @@
 
   .reveal-up {
     animation: reveal-up 0.7s ease-out both;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

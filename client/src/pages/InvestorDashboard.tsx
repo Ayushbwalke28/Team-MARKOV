@@ -180,7 +180,7 @@ export default function InvestorDashboard() {
               ✕
             </button>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center text-2xl">
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-2xl">
                 🛡️
               </div>
               <div>
