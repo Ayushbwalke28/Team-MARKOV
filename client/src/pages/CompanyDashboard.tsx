@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { aiApi, companyApi, companyVerifyApi, investmentApi, ownershipClaimApi } from '../lib/api';
 import OwnershipClaimFlow from '../components/verification/OwnershipClaimFlow';
-import { Sparkles, Megaphone, Send, Zap, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Megaphone, Send, Loader2} from 'lucide-react';
 
 export default function CompanyDashboard() {
   const [company, setCompany] = useState<any>(null);
