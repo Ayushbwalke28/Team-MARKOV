@@ -2,7 +2,7 @@ import { Controller, Post, Get, Patch, Body, Param, UseGuards, Request } from '@
 import { InvestmentService } from './investment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('api/investments')
+@Controller('investments')
 export class InvestmentController {
   constructor(private readonly investmentService: InvestmentService) {}
 
@@ -34,5 +34,21 @@ export class InvestmentController {
   @Get('deal-room/:id')
   getDealRoom(@Request() req, @Param('id') dealRoomId: string) {
     return this.investmentService.getDealRoom(dealRoomId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('investor/verify-accreditation')
+  verifyAccreditation(@Request() req, @Body('documentUrl') documentUrl: string) {
+    return this.investmentService.verifyInvestorAccreditation(req.user.userId, documentUrl);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('deal-room/:id/report-broker')
+  reportBroker(
+    @Request() req,
+    @Param('id') dealRoomId: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.investmentService.reportBroker(dealRoomId, req.user.userId, reason);
   }
 }

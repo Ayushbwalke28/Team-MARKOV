@@ -18,128 +18,172 @@ const testimonials = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#f7f9fb] font-sans text-[#191c1e]">
-      {/* Navbar */}
-      <nav className="bg-[#0A1628] text-white">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-4">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <nav className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 md:px-8">
           <div className="flex items-center gap-3">
             <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-10 h-10" />
-            <span className="text-xl font-bold tracking-tight">Worksphere</span>
+            <div>
+              <p className="text-base font-bold tracking-tight text-slate-900 md:text-lg">Worksphere</p>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Verified Professional Network</p>
+            </div>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-white/70">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#verification" className="hover:text-white transition-colors">Verification</a>
-            <a href="#testimonials" className="hover:text-white transition-colors">Testimonials</a>
+          <div className="hidden items-center gap-7 text-sm font-semibold text-slate-600 md:flex">
+            <a href="#features" className="transition-colors hover:text-slate-900">Capabilities</a>
+            <a href="#verification" className="transition-colors hover:text-slate-900">Verification</a>
+            <a href="#testimonials" className="transition-colors hover:text-slate-900">Testimonials</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm font-medium text-white/70 hover:text-white transition-colors">Sign In</Link>
-            <Link to="/login" className="bg-[#2563EB] hover:bg-[#1d4ed8] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-lg shadow-[#2563EB]/25 hover:shadow-xl hover:shadow-[#2563EB]/30">
-              Get Started
+            <Link to="/login" className="text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900">Sign In</Link>
+            <Link to="/login" className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-slate-800">
+              Request Access
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="bg-[#0A1628] text-white pb-24 pt-16 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-20 w-72 h-72 bg-[#2563EB] rounded-full blur-[128px]" />
-          <div className="absolute bottom-0 left-10 w-96 h-96 bg-[#F59E0B] rounded-full blur-[160px]" />
-        </div>
-        <div className="max-w-7xl mx-auto px-8 relative z-10">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2 mb-6">
-              <Shield size={16} className="text-[#F59E0B]" />
-              <span className="text-xs font-bold uppercase tracking-widest text-[#F59E0B]">Verified Humans Only</span>
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pb-24 pt-18 text-white md:pb-28">
+        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(to_right,rgba(148,163,184,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.12)_1px,transparent_1px)] [background-size:42px_42px]" />
+        <div className="absolute -left-10 top-20 h-72 w-72 rounded-full bg-amber-500/20 blur-[130px]" />
+        <div className="absolute bottom-5 right-10 h-80 w-80 rounded-full bg-blue-500/20 blur-[140px]" />
+
+        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-12 px-6 md:grid-cols-[1.25fr_0.75fr] md:px-8">
+          <div className="reveal-up">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+              <Shield size={14} />
+              Verified Humans And Companies
             </div>
-            <h1 className="text-5xl md:text-6xl font-black leading-[1.1] mb-6">
-              The Trusted <br/>Professional <span className="text-[#2563EB]">Ecosystem</span>
+            <h1 className="font-display text-4xl leading-[1.1] text-white md:text-6xl">
+              Professional networking with institutional-grade trust.
             </h1>
-            <p className="text-lg text-white/60 max-w-xl mb-10 leading-relaxed">
-              Connect, grow, hire, invest, and collaborate — verified humans only.
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-300 md:text-lg">
+              Worksphere helps founders, operators, investors, and hiring teams build high-value relationships in a network where identity and credibility are actively verified.
             </p>
-            <div className="flex items-center gap-4">
-              <Link to="/login" className="bg-[#2563EB] hover:bg-[#1d4ed8] text-white px-8 py-4 rounded-xl text-base font-bold transition-all shadow-xl shadow-[#2563EB]/30 hover:shadow-2xl flex items-center gap-2">
-                Join the Ecosystem <ArrowRight size={18} />
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-7 py-3.5 text-sm font-bold text-slate-900 transition hover:bg-amber-400">
+                Join Worksphere <ArrowRight size={16} />
               </Link>
-              <a href="#features" className="px-6 py-4 rounded-xl text-sm font-medium text-white/60 hover:text-white border border-white/20 hover:border-white/40 transition-all">
-                Learn More
+              <a href="#features" className="rounded-xl border border-white/25 px-6 py-3.5 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/10">
+                Explore Platform
               </a>
             </div>
+            <div className="mt-12 grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+                <p className="text-2xl font-bold text-white">50k+</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-300">Verified Members</p>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+                <p className="text-2xl font-bold text-white">3.2k</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-300">Verified Companies</p>
+              </div>
+              <div className="rounded-xl border border-white/15 bg-white/5 p-4">
+                <p className="text-2xl font-bold text-white">96%</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-300">Trust Score</p>
+              </div>
+            </div>
           </div>
+
+          <aside className="reveal-up elevated-surface self-end rounded-2xl p-6 text-slate-900 md:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Platform Advantage</p>
+            <h2 className="mt-3 font-display text-2xl leading-tight text-slate-900">A curated ecosystem for serious outcomes.</h2>
+            <ul className="mt-6 space-y-4 text-sm text-slate-600">
+              <li className="flex items-start gap-3">
+                <CheckCircle2 size={18} className="mt-0.5 text-emerald-600" />
+                <span>Identity and company checks reduce spam, fake profiles, and low-quality outreach.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 size={18} className="mt-0.5 text-emerald-600" />
+                <span>Intent-driven spaces for hiring, partnership building, investment discovery, and events.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle2 size={18} className="mt-0.5 text-emerald-600" />
+                <span>Actionable AI support to sharpen outreach, opportunity filtering, and decision quality.</span>
+              </li>
+            </ul>
+          </aside>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="max-w-7xl mx-auto px-8 py-24">
-        <div className="text-center mb-16">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] mb-3 block">Ecosystem Features</span>
-          <h2 className="text-3xl md:text-4xl font-black text-[#0A1628] mb-4">A unified platform designed for <br/>serious professional growth.</h2>
+      <section id="features" className="mx-auto w-full max-w-7xl px-6 py-20 md:px-8 md:py-24">
+        <div className="mb-14 text-center">
+          <span className="mb-3 block text-xs font-bold uppercase tracking-[0.2em] text-blue-700">Core Capabilities</span>
+          <h2 className="font-display text-3xl leading-tight text-slate-900 md:text-5xl">Everything needed for high-trust professional growth.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-slate-600">
+            A single workspace to manage relationships, opportunities, hiring, events, and strategic collaboration.
+          </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f) => {
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {features.map((f, idx) => {
             const Icon = f.icon;
             return (
-              <div key={f.title} className="bg-white rounded-xl p-8 border border-[#e0e3e5] hover:shadow-lg hover:shadow-[#0A1628]/5 hover:-translate-y-1 transition-all duration-300 group cursor-pointer">
-                <div className="w-12 h-12 rounded-xl bg-[#0A1628] flex items-center justify-center mb-5 group-hover:bg-[#2563EB] transition-colors">
-                  <Icon size={22} className="text-white" />
+              <div key={f.title} className="elevated-surface group rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white transition-colors group-hover:bg-blue-700">
+                    <Icon size={20} />
+                  </div>
+                  <span className="text-xs font-bold tracking-[0.2em] text-slate-400">0{idx + 1}</span>
                 </div>
-                <h3 className="text-lg font-bold mb-2 text-[#0A1628]">{f.title}</h3>
-                <p className="text-sm text-[#45474c] leading-relaxed">{f.desc}</p>
+                <h3 className="text-lg font-bold text-slate-900">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{f.desc}</p>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* Verification Section */}
-      <section id="verification" className="bg-[#0A1628] text-white py-24">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#F59E0B] mb-3 block">Trust & Safety</span>
-            <h2 className="text-3xl md:text-4xl font-black mb-4">Why Verification Matters</h2>
-            <p className="text-white/50 max-w-2xl mx-auto">We believe trust is the foundation of professional growth. By ensuring every member is a verified human or legitimate company, we eliminate noise, spam, and fraud.</p>
+      <section id="verification" className="bg-slate-900 py-20 text-white md:py-24">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 md:grid-cols-2 md:items-start md:px-8">
+          <div>
+            <span className="mb-3 block text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Trust Framework</span>
+            <h2 className="font-display text-3xl leading-tight md:text-4xl">Verification is built into every professional interaction.</h2>
+            <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-300 md:text-base">
+              Trust should not be optional in professional networking. Worksphere enforces clear verification pathways for individuals and organizations to keep the ecosystem credible and outcome-focused.
+            </p>
+            <div className="mt-8 space-y-4 border-l border-white/20 pl-5">
+              <p className="text-sm text-slate-300">Identity checks for every individual account</p>
+              <p className="text-sm text-slate-300">Documentation-based company validation</p>
+              <p className="text-sm text-slate-300">Visible badges and transparent verification status</p>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-8">
-              <div className="w-12 h-12 rounded-xl bg-[#2563EB] flex items-center justify-center mb-5">
+          <div className="grid grid-cols-1 gap-6">
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-7 backdrop-blur">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
                 <CheckCircle2 size={24} />
               </div>
-              <h3 className="text-xl font-bold mb-3">Human Verification</h3>
-              <p className="text-white/50 text-sm leading-relaxed">Every individual undergoes strict identity verification to ensure authenticity and accountability.</p>
+              <h3 className="text-xl font-bold">Human Verification</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">Every individual undergoes identity checks to ensure authenticity, accountability, and safer collaboration.</p>
             </div>
-            <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-8">
-              <div className="w-12 h-12 rounded-xl bg-[#F59E0B] flex items-center justify-center mb-5">
-                <Building2 size={24} className="text-[#0A1628]" />
+            <div className="rounded-2xl border border-white/15 bg-white/5 p-7 backdrop-blur">
+              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400">
+                <Building2 size={24} className="text-slate-900" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Company Verification</h3>
-              <p className="text-white/50 text-sm leading-relaxed">Organizations are vetted to ensure legitimacy and active standing in their respective industries.</p>
+              <h3 className="text-xl font-bold">Company Verification</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-300">Organizations are vetted for legal legitimacy and operational credibility before profile activation.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="max-w-7xl mx-auto px-8 py-24">
-        <div className="text-center mb-16">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#2563EB] mb-3 block">The Ledger Speaks</span>
-          <h2 className="text-3xl md:text-4xl font-black text-[#0A1628]">Trusted by professionals worldwide.</h2>
+      <section id="testimonials" className="mx-auto w-full max-w-7xl px-6 py-20 md:px-8 md:py-24">
+        <div className="mb-14 text-center">
+          <span className="mb-3 block text-xs font-bold uppercase tracking-[0.2em] text-blue-700">Client Voice</span>
+          <h2 className="font-display text-3xl leading-tight text-slate-900 md:text-5xl">Trusted by professionals across sectors.</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-7 md:grid-cols-3">
           {testimonials.map((t) => (
-            <div key={t.name} className="bg-white rounded-2xl p-8 border border-[#e0e3e5] relative">
-              <Quote size={32} className="text-[#2563EB]/10 absolute top-6 right-6" />
-              <div className="flex items-center gap-1 mb-4">
-                {[1,2,3,4,5].map(i => <Star key={i} size={14} className="text-[#F59E0B] fill-[#F59E0B]" />)}
+            <div key={t.name} className="elevated-surface relative rounded-2xl p-7">
+              <Quote size={30} className="absolute right-6 top-6 text-blue-900/10" />
+              <div className="mb-4 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} className="fill-amber-500 text-amber-500" />)}
               </div>
-              <p className="text-sm text-[#45474c] leading-relaxed mb-6 italic">"{t.quote}"</p>
-              <div className="flex items-center gap-3 pt-4 border-t border-[#e0e3e5]">
-                <div className="w-10 h-10 rounded-full bg-[#0A1628] flex items-center justify-center text-white font-bold text-xs">
+              <p className="mb-6 text-sm italic leading-relaxed text-slate-600">"{t.quote}"</p>
+              <div className="flex items-center gap-3 border-t border-slate-200 pt-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
                   {t.name.split(' ').map(w => w[0]).join('')}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-[#0A1628]">{t.name}</p>
-                  <p className="text-xs text-[#75777d]">{t.role}</p>
+                  <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                  <p className="text-xs text-slate-500">{t.role}</p>
                 </div>
               </div>
             </div>
@@ -147,20 +191,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0A1628] text-white/50 py-12 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <section className="mx-auto mb-16 w-full max-w-7xl px-6 md:px-8">
+        <div className="rounded-3xl bg-gradient-to-r from-slate-900 to-slate-700 p-8 text-white md:p-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Start Now</p>
+          <h3 className="mt-3 font-display text-3xl leading-tight md:text-4xl">Build credible professional momentum.</h3>
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">Join a network where every profile carries proof, every opportunity carries intent, and every introduction has context.</p>
+          <Link to="/login" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-amber-400 px-6 py-3.5 text-sm font-bold text-slate-900 transition hover:bg-amber-300">
+            Create Account <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-200 bg-white py-10">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 px-6 md:flex-row md:px-8">
           <div className="flex items-center gap-3">
             <img src="/logo.jpeg" alt="Worksphere" className="brand-logo w-8 h-8" />
-            <span className="text-white font-bold">Worksphere</span>
+            <span className="font-bold text-slate-900">Worksphere</span>
           </div>
-          <div className="flex items-center gap-6 text-sm">
-            <a href="#" className="hover:text-white transition-colors">About</a>
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
+          <div className="flex items-center gap-6 text-sm text-slate-500">
+            <a href="#" className="transition-colors hover:text-slate-900">About</a>
+            <a href="#" className="transition-colors hover:text-slate-900">Privacy Policy</a>
+            <a href="#" className="transition-colors hover:text-slate-900">Terms</a>
+            <a href="#" className="transition-colors hover:text-slate-900">Contact</a>
           </div>
-          <p className="text-xs">© 2026 Worksphere. All rights reserved.</p>
+          <p className="text-xs text-slate-500">© 2026 Worksphere. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -113,4 +113,54 @@ export class CompanyService {
     await this.usersService.setOwnsCompany(requesterId, false);
     return { ok: true };
   }
+
+  async getTrustProfile(companyId: string) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      include: {
+        owner: {
+          select: { verified: true, name: true, email: true },
+        },
+        fundingRounds: {
+          orderBy: { date: 'desc' },
+        },
+      },
+    });
+
+    if (!company) {
+      throw new NotFoundException('Company not found');
+    }
+
+    const isVerified = company.verificationStatus === 'verified' && company.owner?.verified;
+
+    return {
+      companyId: company.id,
+      name: company.name,
+      verifiedBadge: isVerified,
+      trustScore: company.trustScore || 0,
+      businessProofs: {
+        domain: company.websiteDomain,
+        startYear: company.startYear,
+        gstVerified: !!company.gstin,
+        cinVerified: !!company.cinNumber,
+      },
+      fundingHistory: company.fundingRounds,
+    };
+  }
+
+  async addFundingRound(companyId: string, userId: string, data: any) {
+    const company = await this.prisma.company.findUnique({ where: { id: companyId } });
+    if (!company) throw new NotFoundException('Company not found');
+    if (company.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    return this.prisma.fundingRound.create({
+      data: {
+        companyId,
+        stage: data.stage,
+        amount: data.amount,
+        date: new Date(data.date),
+        investors: data.investors,
+      },
+    });
+  }
 }

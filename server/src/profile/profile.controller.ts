@@ -49,5 +49,14 @@ export class ProfileController {
     const result = await this.mediaService.uploadImage(file);
     return this.profileService.updateAvatar(req.user.userId, result.secure_url);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/toggle-role')
+  async toggleRole(@Req() req: any, @Body('role') role: 'candidate' | 'company_owner') {
+    if (!['candidate', 'company_owner'].includes(role)) {
+      throw new BadRequestException('Invalid role specified');
+    }
+    return this.profileService.toggleRole(req.user.userId, role);
+  }
 }
 

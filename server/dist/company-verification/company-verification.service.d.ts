@@ -1,0 +1,102 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { AiVerificationService } from './ai-verification.service';
+export declare class CompanyVerificationService {
+    private readonly prisma;
+    private readonly aiVerification;
+    private readonly logger;
+    constructor(prisma: PrismaService, aiVerification: AiVerificationService);
+    startVerification(companyId: string, userId: string, gstin: string, cinNumber?: string): Promise<{
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+    submitDocument(sessionId: string, userId: string, documentType: string, fileUrl: string, incorporationCertUrl?: string): Promise<{
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+    runAiVerification(sessionId: string, userId: string): Promise<{
+        session: {
+            id: string;
+            companyId: string;
+            status: import(".prisma/client").$Enums.VerificationStatus;
+            authorizationLetterUrl: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            registrationDocumentUrl: string | null;
+            incorporationCertUrl: string | null;
+            gstin: string | null;
+            cinNumber: string | null;
+            userId: string;
+            documentType: string | null;
+            apiValidationSuccessful: boolean | null;
+            documentValid: boolean | null;
+            directorsMatched: boolean | null;
+            aiVerificationReason: string | null;
+            aiConfidenceScore: number | null;
+            failureReason: string | null;
+        };
+        aiResult: {
+            verdict: "approved" | "rejected" | "manual_review";
+            reason: string;
+            confidence: number;
+        };
+    }>;
+    getSessionStatus(sessionId: string, userId: string): Promise<{
+        company: {
+            verificationStatus: import(".prisma/client").$Enums.CompanyVerificationStatus;
+            gstin: string;
+            cinNumber: string;
+            verifiedAt: Date;
+        };
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+    private getSession;
+}

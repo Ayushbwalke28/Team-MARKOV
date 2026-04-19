@@ -16,9 +16,31 @@ import { ConnectionModule } from './connection/connection.module';
 import { CompanyVerificationModule } from './company-verification/company-verification.module';
 import { PaymentsModule } from './payments/payments.module';
 import { InvestmentModule } from './investment/investment.module';
+import { OwnershipClaimModule } from './ownership-claim/ownership-claim.module';
+import { AdminModule } from './admin/admin.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, ProfileModule, VerificationModule, CompanyModule, OpportunityModule, EventModule, PostModule, FeedModule, MediaModule, ConnectionModule, CompanyVerificationModule, PaymentsModule, InvestmentModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    ProfileModule,
+    VerificationModule,
+    CompanyModule,
+    OpportunityModule,
+    EventModule,
+    PostModule,
+    FeedModule,
+    MediaModule,
+    ConnectionModule,
+    CompanyVerificationModule,
+    PaymentsModule,
+    InvestmentModule,
+    OwnershipClaimModule,
+    AdminModule,
+    AiModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

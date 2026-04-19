@@ -1,15 +1,16 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
   
   // Enable CORS for frontend integration
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  app.enableCors({ origin: clientUrl, credentials: true });
+  app.enableCors({ origin: [clientUrl], credentials: true });
 
   // Parse HttpOnly auth cookies (access/refresh tokens)
   app.use(cookieParser());
@@ -25,8 +26,10 @@ async function bootstrap() {
     }),
   );
 
-  const port = Number(process.env.PORT ?? 3001);
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  const port = process.env.PORT || 3001;
+  const host = '0.0.0.0';
+  
+  await app.listen(port, host);
+  logger.log(`Application is running on: http://${host}:${port}/api`);
 }
 bootstrap();

@@ -57,6 +57,33 @@ async function main() {
     }
   });
 
+  // 0.5. Create Company Owner User
+  const ownerUser = await prisma.user.create({
+    data: {
+      id: 'owner-user',
+      email: 'owner@example.com',
+      name: 'Company Owner',
+      passwordHash,
+      verified: true,
+    }
+  });
+
+  await prisma.userRole.create({
+    data: {
+      userId: ownerUser.id,
+      role: UserRoleType.company_owner
+    }
+  });
+
+  await prisma.userProfile.create({
+    data: {
+      userId: ownerUser.id,
+      fullName: 'Verified Company Owner',
+      about: 'Owner for testing platform functionality',
+      gender: Gender.prefer_not_to_say,
+    }
+  });
+
   // 1. Create 5 Users with Roles, Profiles, Educations, Experiences, Certificates
   const users = [];
   for (let i = 1; i <= 5; i++) {

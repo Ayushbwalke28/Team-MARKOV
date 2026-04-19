@@ -11,6 +11,10 @@ export default function DealRoomView() {
   // Mock signing
   const [isSigning, setIsSigning] = useState(false);
 
+  // Report Broker State
+  const [showReportBroker, setShowReportBroker] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+
   useEffect(() => {
     fetchDealRoom();
   }, [id]);
@@ -78,6 +82,27 @@ export default function DealRoomView() {
     }
   };
 
+  const handleReportBroker = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (id === 'demo') {
+        setDealRoom((prev: any) => ({
+          ...prev,
+          brokerFlagged: true,
+          status: 'frozen',
+        }));
+        setShowReportBroker(false);
+        return;
+      }
+
+      await investmentApi.reportBroker(id!, reportReason);
+      setShowReportBroker(false);
+      fetchDealRoom();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to report broker');
+    }
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-slate-500 dark:text-slate-400">Loading Secure Deal Room...</div>;
   }
@@ -108,12 +133,35 @@ export default function DealRoomView() {
             End-to-end encrypted connection with {dealRoom.company.name}
           </p>
         </div>
-        <Link to="/investor" className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">
-          Back
-        </Link>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setShowReportBroker(true)}
+            className="px-4 py-2 bg-red-100 dark:bg-red-500/10 hover:bg-red-200 dark:hover:bg-red-500/20 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium transition-colors border border-red-200 dark:border-red-500/20"
+          >
+            Report Unauthorized Broker
+          </button>
+          <Link to="/investor" className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors">
+            Back
+          </Link>
+        </div>
       </div>
 
-      {!dealRoom.ndaSigned ? (
+      {dealRoom.brokerFlagged && (
+        <div className="mb-6 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-6 rounded-2xl flex items-start gap-4">
+          <div className="text-3xl">⚠️</div>
+          <div>
+            <h2 className="text-xl font-bold text-red-700 dark:text-red-400">Deal Room Frozen</h2>
+            <p className="text-red-600 dark:text-red-400 mt-1">
+              This deal room has been frozen because one of the parties was reported as an unauthorized broker. 
+              Our Trust & Safety team is investigating the incident. All access to sensitive materials is currently suspended.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Main content - Apply blur if frozen */}
+      <div className={dealRoom.brokerFlagged ? 'opacity-50 filter blur-sm pointer-events-none' : ''}>
+        {!dealRoom.ndaSigned ? (
         <div className="bg-slate-50 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl p-8 relative overflow-hidden shadow-sm dark:shadow-none">
           {/* Glassmorphism blur overlay over content */}
           <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-10 p-6 text-center">
@@ -217,6 +265,49 @@ export default function DealRoomView() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      </div> {/* End main content blur wrapper */}
+
+      {/* Report Broker Modal */}
+      {showReportBroker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowReportBroker(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              ✕
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-3xl">🛡️</div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Report Broker</h2>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 mb-6">
+              Our platform strictly prohibits unauthorized intermediaries. If you suspect the other party is a broker, report them immediately. This will freeze the Deal Room.
+            </p>
+            <form onSubmit={handleReportBroker}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Reason for Reporting</label>
+                <textarea 
+                  required
+                  rows={4}
+                  value={reportReason}
+                  onChange={e => setReportReason(e.target.value)}
+                  placeholder="Explain why you believe this user is an unauthorized broker..."
+                  className="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:border-red-500 outline-none resize-none"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 px-4 py-3 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors">
+                  Report & Freeze Room
+                </button>
+                <button type="button" onClick={() => setShowReportBroker(false)} className="flex-1 px-4 py-3 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

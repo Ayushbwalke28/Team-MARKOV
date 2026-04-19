@@ -12,7 +12,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EventService } from './event.service';
 import { ReportFraudDto } from './dto/report-fraud.dto';
 
-@Controller('api/events')
+@Controller('events')
 export class FraudReportController {
   constructor(private readonly eventService: EventService) {}
 

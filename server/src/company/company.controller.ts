@@ -105,4 +105,29 @@ export class CompanyController {
     const result = await this.mediaService.uploadImage(file);
     return this.companyService.setLogo(id, req.user.userId, result.secure_url);
   }
+
+  /**
+   * GET /companies/:id/trust-profile
+   * Returns trust indicators and funding history for a company.
+   */
+  @Get(':id/trust-profile')
+  getTrustProfile(@Param('id') id: string) {
+    return this.companyService.getTrustProfile(id);
+  }
+
+  /**
+   * POST /companies/:id/funding-rounds
+   * Add a funding round. Authenticated owner only.
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('company_owner')
+  @Post(':id/funding-rounds')
+  @HttpCode(HttpStatus.CREATED)
+  addFundingRound(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: any, // using any here for brevity, alternatively import AddFundingRoundDto
+  ) {
+    return this.companyService.addFundingRound(id, req.user.userId, body);
+  }
 }

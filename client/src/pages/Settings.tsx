@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera } from 'lucide-react';
+import { User, Shield, Bell, Globe, CreditCard, ChevronRight, LogOut, Camera, Building2, Briefcase, Loader2 } from 'lucide-react';
 import api from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, type User as AuthUser } from '../context/AuthContext';
 
 const sections = [
   { icon: User, label: 'Personal Information', desc: 'Update your profile photo, bio, and contact details' },
@@ -33,11 +33,13 @@ type ProfileMeResponse = {
 export default function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileDetails | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isTogglingRole, setIsTogglingRole] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -102,6 +104,24 @@ export default function Settings() {
       }
     }
   };
+  
+  const handleToggleRole = async (targetRole: 'candidate' | 'company_owner') => {
+    if (user?.roles.includes(targetRole) && targetRole === 'candidate') return; // Don't remove candidate for now
+    
+    setRoleError(null);
+    setIsTogglingRole(true);
+    
+    try {
+      const { data } = await api.patch<ProfileMeResponse>('/profile/me/toggle-role', { role: targetRole });
+      if (data.user) {
+        setUser(data.user as AuthUser);
+      }
+    } catch (error: any) {
+      setRoleError(error.response?.data?.message || 'Failed to update role.');
+    } finally {
+      setIsTogglingRole(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto">
@@ -151,9 +171,39 @@ export default function Settings() {
                 </span>
               </div>
               <p className="text-sm text-[#75777d]">{tagline}</p>
-              <p className="text-xs text-[#c5c6cd] mt-2 italic">{joinedText} • Ledger ID: {user?.id?.slice(0, 8) || 'N/A'}</p>
+              
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => handleToggleRole('candidate')}
+                  disabled={isTogglingRole}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    user?.roles.includes('candidate') && !user?.roles.includes('company_owner')
+                      ? 'bg-[#0A1628] text-white shadow-md'
+                      : 'bg-[#f2f4f6] text-[#45474c] hover:bg-[#e0e3e5]'
+                  }`}
+                >
+                  <Briefcase size={14} /> Candidate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleRole('company_owner')}
+                  disabled={isTogglingRole}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    user?.roles.includes('company_owner')
+                      ? 'bg-[#2563EB] text-white shadow-md'
+                      : 'bg-[#f2f4f6] text-[#45474c] hover:bg-[#e0e3e5]'
+                  }`}
+                >
+                  {isTogglingRole ? <Loader2 size={14} className="animate-spin" /> : <Building2 size={14} />} 
+                  Company Owner
+                </button>
+              </div>
+              
+              <p className="text-xs text-[#c5c6cd] mt-3 italic">{joinedText} • Ledger ID: {user?.id?.slice(0, 8) || 'N/A'}</p>
               {isUploadingAvatar && <p className="text-xs text-[#2563EB] mt-1">Uploading avatar...</p>}
               {avatarError && <p className="text-xs text-red-600 mt-1">{avatarError}</p>}
+              {roleError && <p className="text-xs text-red-600 mt-1">{roleError}</p>}
             </div>
           </div>
           <button

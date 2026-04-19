@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventService } from './event.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ForbiddenException, NotFoundException, ConflictException } from '@nestjs/common';
+import { StripeService } from '../payments/stripe/stripe.service';
 
 const mockPrismaService = {
   event: {
@@ -30,6 +31,7 @@ describe('EventService', () => {
       providers: [
         EventService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: StripeService, useValue: { holdFundsInEscrow: jest.fn() } },
       ],
     }).compile();
 

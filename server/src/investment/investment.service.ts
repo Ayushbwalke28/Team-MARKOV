@@ -110,4 +110,39 @@ export class InvestmentService {
 
     return room;
   }
+
+  async verifyInvestorAccreditation(userId: string, documentUrl: string) {
+    const profile = await this.prisma.investorProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException('Investor profile not found');
+
+    return this.prisma.investorProfile.update({
+      where: { userId },
+      data: {
+        accreditationDocumentUrl: documentUrl,
+        accreditationStatus: 'pending_review',
+        identityVerified: true, // Assuming KYC happened prior
+      },
+    });
+  }
+
+  async reportBroker(dealRoomId: string, userId: string, reason: string) {
+    const room = await this.prisma.dealRoom.findUnique({
+      where: { id: dealRoomId },
+      include: { company: true },
+    });
+
+    if (!room) throw new NotFoundException('Deal room not found');
+    if (room.investorId !== userId && room.company.ownerId !== userId) {
+      throw new ForbiddenException('You are not authorized for this deal room');
+    }
+
+    return this.prisma.dealRoom.update({
+      where: { id: dealRoomId },
+      data: {
+        brokerFlagged: true,
+        brokerReportReason: reason,
+        status: 'frozen', // Optional: freeze the room upon report
+      },
+    });
+  }
 }
