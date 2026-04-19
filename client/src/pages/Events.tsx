@@ -18,6 +18,23 @@ export default function Events() {
   const [reportReason, setReportReason] = useState('');
   const [reportDetails, setReportDetails] = useState('');
   const [reportSuccess, setReportSuccess] = useState('');
+  
+  // Booking Modal State
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState('');
+  const [bookingError, setBookingError] = useState('');
+
+  useEffect(() => {
+    // Load Razorpay Script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   useEffect(() => {
     if (viewMode === 'explore') fetchEvents();
@@ -182,8 +199,14 @@ export default function Events() {
                         <Clock size={12} className="text-[#c5c6cd]" /> {e.time.split(' ')[0]}
                       </div>
                     </div>
-                    <button className="text-[10px] font-black text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      {new Date(e.schedule) > new Date() ? 'Register Now' : 'View Details'} <ChevronRight size={12} />
+                    <button 
+                      onClick={(e_stop) => {
+                        e_stop.stopPropagation();
+                        setSelectedEvent(e);
+                      }}
+                      className="text-[10px] font-black text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform"
+                    >
+                      {new Date(e.schedule) > new Date() ? (e.fees > 0 ? `Book - ₹${e.fees}` : 'Register Free') : 'View Details'} <ChevronRight size={12} />
                     </button>
                   </div>
                 </div>
@@ -289,6 +312,138 @@ export default function Events() {
                     Submit Report & Freeze Payout
                   </button>
                 </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Booking Modal */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+            <button 
+              onClick={() => {
+                setSelectedEvent(null);
+                setBookingSuccess('');
+                setBookingError('');
+              }}
+              className="absolute top-4 right-4 text-[#75777d] hover:text-[#0A1628] z-10"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="relative h-48 bg-[#0A1628] flex items-center justify-center overflow-hidden">
+              {selectedEvent.bannerUrl ? (
+                <img src={selectedEvent.bannerUrl} alt={selectedEvent.title} className="w-full h-full object-cover opacity-60" />
+              ) : (
+                <Calendar size={64} className="text-white/20" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A1628] to-transparent" />
+              <div className="absolute bottom-6 left-8 right-8 text-white">
+                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#2563EB] text-white mb-2 inline-block">
+                  {selectedEvent.type}
+                </span>
+                <h3 className="text-2xl font-black">{selectedEvent.title}</h3>
+              </div>
+            </div>
+
+            <div className="p-8">
+              <p className="text-sm text-[#75777d] leading-relaxed mb-6">
+                {selectedEvent.description || 'No description provided for this event.'}
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="bg-[#f7f9fb] p-4 rounded-2xl border border-[#e0e3e5]">
+                  <p className="text-[10px] font-black text-[#75777d] uppercase tracking-wider mb-1">Date & Time</p>
+                  <p className="text-sm font-bold text-[#0A1628]">{selectedEvent.date} • {selectedEvent.time}</p>
+                </div>
+                <div className="bg-[#f7f9fb] p-4 rounded-2xl border border-[#e0e3e5]">
+                  <p className="text-[10px] font-black text-[#75777d] uppercase tracking-wider mb-1">Location</p>
+                  <p className="text-sm font-bold text-[#0A1628]">{selectedEvent.location}</p>
+                </div>
+              </div>
+
+              {bookingSuccess ? (
+                <div className="bg-emerald-50 text-emerald-600 p-4 rounded-2xl text-sm font-bold border border-emerald-100 flex items-center gap-3">
+                  <CheckCircle2 size={20} />
+                  Booking Confirmed! Check "My Bookings" for details.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bookingError && (
+                    <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100">
+                      {bookingError}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between p-4 bg-[#0A1628]/5 rounded-2xl mb-4">
+                    <span className="text-sm font-bold text-[#0A1628]">Registration Fee</span>
+                    <span className="text-lg font-black text-[#0A1628]">
+                      {selectedEvent.fees > 0 ? `₹${selectedEvent.fees}` : 'FREE'}
+                    </span>
+                  </div>
+
+                  <button 
+                    disabled={bookingLoading}
+                    onClick={async () => {
+                      setBookingLoading(true);
+                      setBookingError('');
+                      try {
+                        if (selectedEvent.fees <= 0) {
+                          await eventApi.bookEvent(selectedEvent.id);
+                          setBookingSuccess('Success');
+                          fetchEvents();
+                        } else {
+                          // Razorpay Flow
+                          const orderData = await eventApi.createRazorpayOrder(selectedEvent.id);
+                          
+                          const options = {
+                            key: orderData.key,
+                            amount: orderData.amount,
+                            currency: orderData.currency,
+                            name: "Team MARKOV",
+                            description: `Booking for ${selectedEvent.title}`,
+                            order_id: orderData.orderId,
+                            handler: async (response: any) => {
+                              try {
+                                await eventApi.verifyRazorpayPayment(selectedEvent.id, {
+                                  razorpay_order_id: response.razorpay_order_id,
+                                  razorpay_payment_id: response.razorpay_payment_id,
+                                  razorpay_signature: response.razorpay_signature,
+                                });
+                                setBookingSuccess('Success');
+                                fetchEvents();
+                              } catch (err: any) {
+                                setBookingError(err.response?.data?.message || 'Payment verification failed');
+                              }
+                            },
+                            prefill: {
+                              name: "", // Can be filled if user profile is available
+                              email: "",
+                            },
+                            theme: {
+                              color: "#0A1628",
+                            },
+                          };
+                          
+                          const rzp = new (window as any).Razorpay(options);
+                          rzp.open();
+                        }
+                      } catch (err: any) {
+                        setBookingError(err.response?.data?.message || 'Booking failed');
+                      } finally {
+                        setBookingLoading(false);
+                      }
+                    }}
+                    className={`w-full py-4 rounded-2xl text-sm font-black transition-all shadow-lg ${
+                      bookingLoading 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'bg-[#2563EB] text-white hover:bg-[#1d4ed8] shadow-[#2563EB]/20'
+                    }`}
+                  >
+                    {bookingLoading ? 'Processing...' : selectedEvent.fees > 0 ? 'Pay & Register' : 'Register Now'}
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -110,6 +110,9 @@ export const eventApi = {
   getEvents: () => api.get('/events').then(res => res.data),
   getMyBookings: () => api.get('/events/my-bookings').then(res => res.data),
   bookEvent: (eventId: string) => api.post(`/events/${eventId}/book`).then(res => res.data),
+  createRazorpayOrder: (eventId: string) => api.post(`/events/${eventId}/razorpay-order`).then(res => res.data),
+  verifyRazorpayPayment: (eventId: string, payload: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => 
+    api.post(`/events/${eventId}/razorpay-verify`, payload).then(res => res.data),
 };
 
 export const ownershipClaimApi = {

@@ -9,6 +9,7 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { OrganizerType } from '@prisma/client';
 import { StripeService } from '../payments/stripe/stripe.service';
+import { RazorpayService } from '../payments/razorpay/razorpay.service';
 
 /** Default include shape for event queries — organizer info + aggregated counts */
 const EVENT_INCLUDE = {
@@ -24,6 +25,7 @@ export class EventService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripeService: StripeService,
+    private readonly razorpayService: RazorpayService,
   ) {}
 
   async create(userId: string, dto: CreateEventDto) {
@@ -288,5 +290,62 @@ export class EventService {
     });
 
     return report;
+  }
+
+  async createRazorpayOrder(id: string, userId: string) {
+    const event = await this.prisma.event.findUnique({ where: { id } });
+    if (!event) throw new NotFoundException('Event not found');
+    if (event.fees <= 0) throw new ConflictException('This event is free');
+
+    // Check if already booked
+    const existing = await this.prisma.eventBooking.findUnique({
+      where: { eventId_userId: { eventId: id, userId } },
+    });
+    if (existing) throw new ConflictException('Already booked');
+
+    const order = await this.razorpayService.createOrder(
+      event.fees,
+      'INR',
+      `event_booking_${id}_${userId}`,
+    );
+
+    return {
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key: process.env.RAZORPAY_KEY_ID,
+    };
+  }
+
+  async completeRazorpayBooking(
+    id: string,
+    userId: string,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string,
+  ) {
+    const isValid = this.razorpayService.verifyPayment(
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    );
+
+    if (!isValid) {
+      throw new ForbiddenException('Invalid payment signature');
+    }
+
+    return this.prisma.eventBooking.create({
+      data: {
+        eventId: id,
+        userId,
+        paymentId: razorpayPaymentId,
+        escrowStatus: 'held', // Hold in escrow like Stripe
+      },
+      include: {
+        event: {
+          select: { id: true, title: true, schedule: true, mode: true, fees: true },
+        },
+      },
+    });
   }
 }

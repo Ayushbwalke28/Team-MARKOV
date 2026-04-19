@@ -98,6 +98,28 @@ export class EventController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post(':id/razorpay-order')
+  createRazorpayOrder(@Param('id') id: string, @Req() req: any) {
+    return this.eventService.createRazorpayOrder(id, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/razorpay-verify')
+  verifyRazorpayPayment(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+  ) {
+    return this.eventService.completeRazorpayBooking(
+      id,
+      req.user.userId,
+      body.razorpay_order_id,
+      body.razorpay_payment_id,
+      body.razorpay_signature,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':id/banner')
   @UseInterceptors(FileInterceptor('file'))
   async uploadBanner(
