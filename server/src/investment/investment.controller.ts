@@ -2,7 +2,7 @@ import { Controller, Post, Get, Patch, Body, Param, UseGuards, Request } from '@
 import { InvestmentService } from './investment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('api/investments')
+@Controller('investments')
 export class InvestmentController {
   constructor(private readonly investmentService: InvestmentService) {}
 

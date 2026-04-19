@@ -205,6 +205,9 @@ model Company {
   verificationStatus      CompanyVerificationStatus @default(pending)
   taxId                   String?
   registrationDocumentUrl String?
+  incorporationCertUrl    String?
+  gstin                   String?
+  cinNumber               String?
   verifiedAt              DateTime?
 
   owner                       User                         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -459,11 +462,23 @@ model CompanyVerificationSession {
   status       VerificationStatus @default(pending)
   documentType String?
 
+  // Legal identity submitted at start
+  gstin     String?
+  cinNumber String?
+
+  // Document URLs
+  registrationDocumentUrl String?
+  incorporationCertUrl    String?
+
   apiValidationSuccessful Boolean?
   documentValid           Boolean?
 
   directorsMatched       Boolean?
   authorizationLetterUrl String?
+
+  // AI verification result
+  aiVerificationReason String?
+  aiConfidenceScore    Float?
 
   failureReason String?
 

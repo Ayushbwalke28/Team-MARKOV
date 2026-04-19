@@ -32,7 +32,6 @@ export default function Verification() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [consentInfo, setConsentInfo] = useState<any>(null);
-  const [existingStatus, setExistingStatus] = useState<any>(null);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
   // Check existing verification status on mount
@@ -41,7 +40,6 @@ export default function Verification() {
       try {
         const status = await verificationApi.getMyStatus();
         if (status) {
-          setExistingStatus(status);
           if (['passed', 'locked'].includes(status.status)) {
             setResult(status);
             setStep('result');

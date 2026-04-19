@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { investmentApi, companyApi } from '../lib/api';
 import { Link } from 'react-router-dom';
 
 export default function InvestorDashboard() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

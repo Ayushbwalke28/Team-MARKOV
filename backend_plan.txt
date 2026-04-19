@@ -1,0 +1,11 @@
+1. Update company-verification controller:
+   - Import FileInterceptor, UploadedFile from @nestjs/platform-express
+   - Import MediaService and add to constructor (ensure MediaModule is imported in CompanyVerificationModule)
+   - Update upload endpoint to use FileInterceptor and upload image.
+2. Update company-verification.service.ts
+   - update `submitDocument` to take `gstin`. Save to Company taxId.
+   - update `runMockApiValidation` to `runAiValidation` (rename or rewrite logic):
+      a. fetch image URL as png.
+      b. Run `tesseract.js` on the image buffer/URL.
+      c. Send extracted text + GSTIN to Hugging Face Model.
+      d. Return based on AI response.

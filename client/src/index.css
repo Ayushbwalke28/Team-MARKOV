@@ -1,37 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  --color-background: hsl(210 33% 98%);
-  --color-foreground: hsl(204 9% 11%);
+  --color-background: hsl(210 30% 98%);
+  --color-foreground: hsl(215 28% 14%);
   --color-card: hsl(0 0% 100%);
   --color-card-foreground: hsl(204 9% 11%);
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(204 9% 11%);
-  --color-primary: hsl(216 60% 10%);
+  --color-primary: hsl(216 52% 14%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(221 83% 53%);
+  --color-secondary: hsl(207 74% 42%);
   --color-secondary-foreground: hsl(0 0% 100%);
-  --color-muted: hsl(210 17% 96%);
-  --color-muted-foreground: hsl(223 5% 28%);
+  --color-muted: hsl(210 21% 95%);
+  --color-muted-foreground: hsl(219 12% 32%);
   --color-accent: hsl(210 17% 96%);
   --color-accent-foreground: hsl(204 9% 11%);
   --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(0 0% 100%);
-  --color-border: hsl(210 17% 85%);
-  --color-input: hsl(210 17% 96%);
-  --color-ring: hsl(216 60% 10%);
+  --color-border: hsl(211 20% 84%);
+  --color-input: hsl(210 21% 95%);
+  --color-ring: hsl(216 52% 14%);
   
   --radius-lg: 0.75rem;
 
   /* Architectural Custom Tokens */
-  --color-surface: hsl(210 33% 98%);
-  --color-surface-low: hsl(210 17% 96%);
+  --color-surface: hsl(210 30% 98%);
+  --color-surface-low: hsl(210 21% 95%);
   --color-surface-lowest: hsl(0 0% 100%);
-  --color-surface-high: hsl(210 9% 91%);
+  --color-surface-high: hsl(211 14% 90%);
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
 }
 
 @layer base {
@@ -40,6 +41,36 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(circle at top right, rgba(30, 64, 175, 0.06), transparent 42%), radial-gradient(circle at bottom left, rgba(180, 83, 9, 0.06), transparent 36%);
+    line-height: 1.5;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .elevated-surface {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.08);
+    backdrop-filter: blur(6px);
+  }
+
+  .reveal-up {
+    animation: reveal-up 0.7s ease-out both;
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

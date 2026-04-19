@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { companyApi, companyVerifyApi, investmentApi } from '../lib/api';
 
 export default function CompanyDashboard() {
-  const { user } = useAuth();
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
