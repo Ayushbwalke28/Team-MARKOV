@@ -15,6 +15,11 @@ export const connectionApi = {
   removeConnection: (connectionId: string) => api.delete(`/connections/${connectionId}`).then(res => res.data),
 };
 
+export const profileApi = {
+  getMe: () => api.get('/profile/me').then(res => res.data),
+  updateMe: (payload: any) => api.patch('/profile/me', payload).then(res => res.data),
+};
+
 export const postApi = {
   create: (payload: { text: string; authorType: 'user' | 'company'; media?: string[] }) =>
     api.post('/posts', payload).then(res => res.data),
@@ -63,7 +68,8 @@ export const verificationApi = {
 };
 
 export const companyVerifyApi = {
-  start: (companyId: string) => api.post('/company-verify/start', { companyId }).then(res => res.data),
+  start: (companyId: string, gstin: string, cinNumber?: string) => 
+    api.post('/company-verify/start', { companyId, gstin, cinNumber }).then(res => res.data),
   uploadDocument: (sessionId: string, documentType: string, fileUrl: string) => 
     api.post(`/company-verify/${sessionId}/upload`, { documentType, fileUrl }).then(res => res.data),
   submitValidation: (sessionId: string) => api.post(`/company-verify/${sessionId}/submit`).then(res => res.data),
@@ -86,12 +92,18 @@ export const investmentApi = {
     api.patch(`/investments/deal-room/${dealRoomId}/nda`, { ndaUrl }).then(res => res.data),
   getDealRoom: (dealRoomId: string) => 
     api.get(`/investments/deal-room/${dealRoomId}`).then(res => res.data),
+  verifyAccreditation: (documentUrl: string) => 
+    api.post(`/investments/investor/verify-accreditation`, { documentUrl }).then(res => res.data),
+  reportBroker: (dealRoomId: string, reason: string) => 
+    api.post(`/investments/deal-room/${dealRoomId}/report-broker`, { reason }).then(res => res.data),
 };
 
 export const companyApi = {
   getAll: () => api.get('/companies').then(res => res.data),
   getMyCompany: () => api.get('/companies/mine').then(res => res.data),
   create: (payload: any) => api.post('/companies', payload).then(res => res.data),
+  getTrustProfile: (companyId: string) => api.get(`/companies/${companyId}/trust-profile`).then(res => res.data),
+  addFundingRound: (companyId: string, payload: any) => api.post(`/companies/${companyId}/funding-rounds`, payload).then(res => res.data),
 };
 
 export const eventApi = {
@@ -100,5 +112,40 @@ export const eventApi = {
   bookEvent: (eventId: string) => api.post(`/events/${eventId}/book`).then(res => res.data),
 };
 
-export default api;
+export const ownershipClaimApi = {
+  create: (companyId: string, requestedRole?: string) => 
+    api.post('/ownership-claims', { companyId, requestedRole }).then(res => res.data),
+  getMyClaims: () => api.get('/ownership-claims/my').then(res => res.data),
+  getDetail: (claimId: string) => api.get(`/ownership-claims/${claimId}`).then(res => res.data),
+  withdraw: (claimId: string) => api.delete(`/ownership-claims/${claimId}`).then(res => res.data),
+  sendDomainOtp: (claimId: string, email: string) => 
+    api.post(`/ownership-claims/${claimId}/domain-email/send-otp`, { email }).then(res => res.data),
+  verifyDomainOtp: (claimId: string, otp: string) => 
+    api.post(`/ownership-claims/${claimId}/domain-email/verify`, { otp }).then(res => res.data),
+  uploadDocuments: (claimId: string, authorizationLetterUrl: string, governmentIdUrl?: string) => 
+    api.post(`/ownership-claims/${claimId}/documents`, { authorizationLetterUrl, governmentIdUrl }).then(res => res.data),
+  validateGstin: (claimId: string, gstin: string, cinNumber?: string) => 
+    api.post(`/ownership-claims/${claimId}/gst-validate`, { gstin, cinNumber }).then(res => res.data),
+  requestAdminReview: (claimId: string) => 
+    api.post(`/ownership-claims/${claimId}/request-admin-review`).then(res => res.data),
+};
 
+export const adminClaimApi = {
+  getStats: () => api.get('/admin/ownership-claims/stats').then(res => res.data),
+  listClaims: (status?: string, page?: number, limit?: number) => 
+    api.get('/admin/ownership-claims', { params: { status, page, limit } }).then(res => res.data),
+  getDetail: (claimId: string) => api.get(`/admin/ownership-claims/${claimId}`).then(res => res.data),
+  decide: (claimId: string, payload: { decision: string; grantRole?: string; notes?: string }) => 
+    api.patch(`/admin/ownership-claims/${claimId}/decide`, payload).then(res => res.data),
+};
+
+export const aiApi = {
+  suggestProfileImprovements: (profileData: any) => 
+    api.post('/ai/profile/suggest', { profileData }).then(res => res.data),
+  generateCampaign: (companyData: any, goal: string) => 
+    api.post('/ai/campaign/generate', { companyData, goal }).then(res => res.data),
+  chat: (messages: { role: 'user' | 'assistant' | 'system'; content: string }[]) => 
+    api.post('/ai/chat', { messages }).then(res => res.data),
+};
+
+export default api;

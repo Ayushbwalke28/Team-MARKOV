@@ -35,4 +35,20 @@ export class InvestmentController {
   getDealRoom(@Request() req, @Param('id') dealRoomId: string) {
     return this.investmentService.getDealRoom(dealRoomId, req.user.userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('investor/verify-accreditation')
+  verifyAccreditation(@Request() req, @Body('documentUrl') documentUrl: string) {
+    return this.investmentService.verifyInvestorAccreditation(req.user.userId, documentUrl);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('deal-room/:id/report-broker')
+  reportBroker(
+    @Request() req,
+    @Param('id') dealRoomId: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.investmentService.reportBroker(dealRoomId, req.user.userId, reason);
+  }
 }

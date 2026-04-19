@@ -9,7 +9,7 @@ async function bootstrap() {
   
   // Enable CORS for frontend integration
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-  app.enableCors({ origin: ["http://localhost:5174"], credentials: true });
+  app.enableCors({ origin: [clientUrl], credentials: true });
 
   // Parse HttpOnly auth cookies (access/refresh tokens)
   app.use(cookieParser());

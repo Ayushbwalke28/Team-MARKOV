@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import VerificationStatusBadge from '../components/verification/VerificationStatus';
-import { verificationApi } from '../lib/api';
+import { verificationApi, adminClaimApi } from '../lib/api';
 
-type Tab = 'queue' | 'audit';
+type Tab = 'queue' | 'audit' | 'ownership_claims';
 
 interface ReviewItem {
   id: string;
@@ -33,6 +33,7 @@ export default function AdminReviewDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<ReviewItem | null>(null);
   const [decision, setDecision] = useState<'approved' | 'rejected' | ''>('');
+  const [grantRole, setGrantRole] = useState<'owner' | 'founder' | 'authorized'>('owner');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +42,16 @@ export default function AdminReviewDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const status = tab === 'queue' ? 'pending' : 'reviewed';
-      const res = await verificationApi.adminGetQueue(status, page);
-      setItems(res.items);
-      setPagination(res.pagination);
+      if (tab === 'ownership_claims') {
+        const res = await adminClaimApi.listClaims('under_admin_review', page);
+        setItems(res.items);
+        setPagination(res.pagination);
+      } else {
+        const status = tab === 'queue' ? 'pending' : 'reviewed';
+        const res = await verificationApi.adminGetQueue(status, page);
+        setItems(res.items);
+        setPagination(res.pagination);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load data');
     } finally {
@@ -59,7 +66,11 @@ export default function AdminReviewDashboard() {
     setSubmitting(true);
     setError(null);
     try {
-      await verificationApi.adminSubmitDecision(selectedItem.id, decision, notes || undefined);
+      if (tab === 'ownership_claims') {
+        await adminClaimApi.decide(selectedItem.id, { decision, grantRole: decision === 'approved' ? grantRole : undefined, notes: notes || undefined });
+      } else {
+        await verificationApi.adminSubmitDecision(selectedItem.id, decision, notes || undefined);
+      }
       setSelectedItem(null);
       setDecision('');
       setNotes('');
@@ -97,6 +108,12 @@ export default function AdminReviewDashboard() {
           >
             📜 Audit Log
           </button>
+          <button
+            style={{ ...styles.tab, ...(tab === 'ownership_claims' ? styles.tabActive : {}) }}
+            onClick={() => { setTab('ownership_claims'); setSelectedItem(null); }}
+          >
+            🏢 Ownership Claims
+          </button>
         </div>
 
         {error && <div style={styles.errorBanner}>⚠️ {error}</div>}
@@ -108,7 +125,7 @@ export default function AdminReviewDashboard() {
               <div style={styles.loadingBox}>Loading...</div>
             ) : items.length === 0 ? (
               <div style={styles.emptyBox}>
-                {tab === 'queue' ? '✅ No pending reviews' : '📜 No audit entries yet'}
+                {tab === 'queue' ? '✅ No pending reviews' : tab === 'ownership_claims' ? '✅ No ownership claims pending' : '📜 No audit entries yet'}
               </div>
             ) : (
               items.map((item) => (
@@ -122,32 +139,48 @@ export default function AdminReviewDashboard() {
                   role="button"
                   tabIndex={0}
                 >
-                  <div style={styles.listItemTop}>
-                    <VerificationStatusBadge
-                      status={item.verificationSession.status}
-                      size="sm"
-                    />
-                    {tab === 'queue' && isOverdue(item.slaDeadline) && (
-                      <span style={styles.overdueBadge}>⏰ OVERDUE</span>
-                    )}
-                  </div>
-                  <div style={styles.listItemMeta}>
-                    <span>User: {item.verificationSession.userId.slice(0, 8)}...</span>
-                    <span>Score: {item.verificationSession.confidenceScore != null
-                      ? `${(item.verificationSession.confidenceScore * 100).toFixed(0)}%`
-                      : 'N/A'}</span>
-                  </div>
-                  <div style={styles.listItemReason}>{item.reason}</div>
-                  <div style={styles.listItemDate}>{formatDate(item.createdAt)}</div>
-                  {item.reviewDecision && (
-                    <div style={{
-                      ...styles.decisionBadge,
-                      color: item.reviewDecision === 'approved' ? '#10b981' : '#ef4444',
-                      background: item.reviewDecision === 'approved'
-                        ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                    }}>
-                      {item.reviewDecision === 'approved' ? '✅ Approved' : '❌ Rejected'}
-                    </div>
+                  {tab === 'ownership_claims' ? (
+                    <>
+                      <div style={styles.listItemTop}>
+                        <div style={styles.decisionBadge}>{(item as any).status}</div>
+                      </div>
+                      <div style={styles.listItemMeta}>
+                        <span>User: {(item as any).user?.id.slice(0, 8)}...</span>
+                        <span>Company: {(item as any).company?.name}</span>
+                      </div>
+                      <div style={styles.listItemReason}>Method: {(item as any).verificationMethod || 'N/A'}</div>
+                      <div style={styles.listItemDate}>{formatDate(item.createdAt)}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={styles.listItemTop}>
+                        <VerificationStatusBadge
+                          status={(item as any).verificationSession?.status}
+                          size="sm"
+                        />
+                        {tab === 'queue' && isOverdue((item as any).slaDeadline) && (
+                          <span style={styles.overdueBadge}>⏰ OVERDUE</span>
+                        )}
+                      </div>
+                      <div style={styles.listItemMeta}>
+                        <span>User: {(item as any).verificationSession?.userId.slice(0, 8)}...</span>
+                        <span>Score: {(item as any).verificationSession?.confidenceScore != null
+                          ? `${((item as any).verificationSession.confidenceScore * 100).toFixed(0)}%`
+                          : 'N/A'}</span>
+                      </div>
+                      <div style={styles.listItemReason}>{(item as any).reason}</div>
+                      <div style={styles.listItemDate}>{formatDate(item.createdAt)}</div>
+                      {(item as any).reviewDecision && (
+                        <div style={{
+                          ...styles.decisionBadge,
+                          color: (item as any).reviewDecision === 'approved' ? '#10b981' : '#ef4444',
+                          background: (item as any).reviewDecision === 'approved'
+                            ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                        }}>
+                          {(item as any).reviewDecision === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))
@@ -179,66 +212,103 @@ export default function AdminReviewDashboard() {
               <h3 style={styles.detailTitle}>Review Details</h3>
 
               <div style={styles.detailGrid}>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Session ID</span>
-                  <span style={styles.detailValue}>{selectedItem.verificationSession.id}</span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>User ID</span>
-                  <span style={styles.detailValue}>{selectedItem.verificationSession.userId}</span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Document Type</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.verificationSession.documentType || 'Unknown'}
-                  </span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Confidence</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.verificationSession.confidenceScore != null
-                      ? `${(selectedItem.verificationSession.confidenceScore * 100).toFixed(1)}%`
-                      : 'N/A'}
-                  </span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Face Match</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.verificationSession.faceMatchScore != null
-                      ? `${(selectedItem.verificationSession.faceMatchScore * 100).toFixed(1)}%`
-                      : 'N/A'}
-                  </span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Liveness</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.verificationSession.livenessPass ? '✅ Passed' : '❌ Failed'}
-                  </span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>Attempt #</span>
-                  <span style={styles.detailValue}>
-                    {selectedItem.verificationSession.attemptNumber}
-                  </span>
-                </div>
-                <div style={styles.detailField}>
-                  <span style={styles.detailLabel}>SLA Deadline</span>
-                  <span style={{
-                    ...styles.detailValue,
-                    color: isOverdue(selectedItem.slaDeadline) ? '#ef4444' : undefined,
-                  }}>
-                    {formatDate(selectedItem.slaDeadline)}
-                  </span>
-                </div>
+                {tab === 'ownership_claims' ? (
+                  <>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Claim ID</span>
+                      <span style={styles.detailValue}>{selectedItem.id}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Company</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).company?.name} ({(selectedItem as any).company?.domain})</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>User ID</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).user?.id}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Method</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).verificationMethod || 'N/A'}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Domain Email</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).domainEmail || 'N/A'}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>GSTIN</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).gstRegistrationNumber || 'N/A'}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Created At</span>
+                      <span style={styles.detailValue}>{formatDate(selectedItem.createdAt)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Session ID</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).verificationSession?.id}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>User ID</span>
+                      <span style={styles.detailValue}>{(selectedItem as any).verificationSession?.userId}</span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Document Type</span>
+                      <span style={styles.detailValue}>
+                        {(selectedItem as any).verificationSession?.documentType || 'Unknown'}
+                      </span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Confidence</span>
+                      <span style={styles.detailValue}>
+                        {(selectedItem as any).verificationSession?.confidenceScore != null
+                          ? `${((selectedItem as any).verificationSession.confidenceScore * 100).toFixed(1)}%`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Face Match</span>
+                      <span style={styles.detailValue}>
+                        {(selectedItem as any).verificationSession?.faceMatchScore != null
+                          ? `${((selectedItem as any).verificationSession.faceMatchScore * 100).toFixed(1)}%`
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Liveness</span>
+                      <span style={styles.detailValue}>
+                        {(selectedItem as any).verificationSession?.livenessPass ? '✅ Passed' : '❌ Failed'}
+                      </span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>Attempt #</span>
+                      <span style={styles.detailValue}>
+                        {(selectedItem as any).verificationSession?.attemptNumber}
+                      </span>
+                    </div>
+                    <div style={styles.detailField}>
+                      <span style={styles.detailLabel}>SLA Deadline</span>
+                      <span style={{
+                        ...styles.detailValue,
+                        color: isOverdue((selectedItem as any).slaDeadline) ? '#ef4444' : undefined,
+                      }}>
+                        {formatDate((selectedItem as any).slaDeadline)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div style={styles.detailField}>
-                <span style={styles.detailLabel}>Reason for Review</span>
-                <span style={styles.detailValue}>{selectedItem.reason}</span>
-              </div>
+              {tab !== 'ownership_claims' && (
+                <div style={styles.detailField}>
+                  <span style={styles.detailLabel}>Reason for Review</span>
+                  <span style={styles.detailValue}>{(selectedItem as any).reason}</span>
+                </div>
+              )}
 
               {/* Decision form (only for pending reviews) */}
-              {!selectedItem.reviewDecision && tab === 'queue' && (
+              {(!(selectedItem as any).reviewDecision && (tab === 'queue' || tab === 'ownership_claims')) && (
                 <div style={styles.decisionForm}>
                   <h4 style={styles.decisionTitle}>Submit Decision</h4>
                   <div style={styles.decisionBtns}>
@@ -257,6 +327,20 @@ export default function AdminReviewDashboard() {
                       onClick={() => setDecision('rejected')}
                     >❌ Reject</button>
                   </div>
+                  {tab === 'ownership_claims' && decision === 'approved' && (
+                    <div style={{ marginTop: '10px' }}>
+                      <span style={{...styles.detailLabel, display: 'block', marginBottom: '4px'}}>Assign Role</span>
+                      <select
+                        value={grantRole}
+                        onChange={(e) => setGrantRole(e.target.value as any)}
+                        style={styles.notesInput}
+                      >
+                        <option value="owner">Owner</option>
+                        <option value="founder">Founder</option>
+                        <option value="authorized">Authorized</option>
+                      </select>
+                    </div>
+                  )}
                   <textarea
                     style={styles.notesInput}
                     placeholder="Add notes (optional for approve, recommended for reject)..."
@@ -278,13 +362,13 @@ export default function AdminReviewDashboard() {
               )}
 
               {/* Previous decision display */}
-              {selectedItem.reviewDecision && (
+              {(selectedItem as any).reviewDecision && (
                 <div style={styles.previousDecision}>
                   <h4 style={styles.decisionTitle}>Decision</h4>
-                  <p><strong>Result:</strong> {selectedItem.reviewDecision}</p>
-                  {selectedItem.reviewNotes && <p><strong>Notes:</strong> {selectedItem.reviewNotes}</p>}
-                  {selectedItem.reviewedAt && <p><strong>Reviewed:</strong> {formatDate(selectedItem.reviewedAt)}</p>}
-                  {selectedItem.reviewedBy && <p><strong>Reviewer:</strong> {selectedItem.reviewedBy}</p>}
+                  <p><strong>Result:</strong> {(selectedItem as any).reviewDecision}</p>
+                  {(selectedItem as any).reviewNotes && <p><strong>Notes:</strong> {(selectedItem as any).reviewNotes}</p>}
+                  {(selectedItem as any).reviewedAt && <p><strong>Reviewed:</strong> {formatDate((selectedItem as any).reviewedAt)}</p>}
+                  {(selectedItem as any).reviewedBy && <p><strong>Reviewer:</strong> {(selectedItem as any).reviewedBy}</p>}
                 </div>
               )}
             </div>

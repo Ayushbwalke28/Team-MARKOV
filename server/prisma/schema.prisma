@@ -12,6 +12,32 @@ enum UserRoleType {
   admin
 }
 
+enum ClaimStatus {
+  pending
+  domain_otp_sent
+  document_uploaded
+  gst_validated
+  under_admin_review
+  approved
+  rejected
+  withdrawn
+}
+
+enum ClaimVerificationMethod {
+  domain_email
+  business_document
+  gst_registration
+  admin_review
+}
+
+enum CompanyRoleType {
+  owner
+  founder
+  authorized
+  employee
+  viewer
+}
+
 enum Gender {
   male
   female
@@ -89,6 +115,8 @@ model User {
   investorProfile             InvestorProfile?
   dealRooms                   DealRoom[]
   fraudReports                FraudReport[]
+  ownershipClaims             CompanyOwnershipClaim[]      @relation("ClaimantClaims")
+  companyRoles                CompanyRole[]
 
   @@index([email])
 }
@@ -201,6 +229,7 @@ model Company {
   description             String?
   size                    String?
   domain                  String?
+  websiteDomain           String?                   @unique
   logoUrl                 String?
   verificationStatus      CompanyVerificationStatus @default(pending)
   taxId                   String?
@@ -217,6 +246,10 @@ model Company {
   companyVerificationSessions CompanyVerificationSession[]
   investmentProfile           InvestmentProfile?
   dealRooms                   DealRoom[]
+  ownershipClaims             CompanyOwnershipClaim[]
+  companyRoles                CompanyRole[]
+  fundingRounds               FundingRound[]
+  trustScore                  Float?                       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -554,8 +587,10 @@ model InvestmentProfile {
 model InvestorProfile {
   id                  String  @id @default(cuid())
   userId              String  @unique
-  accreditationStatus String  @default("pending")
-  investmentThesis    String?
+  accreditationStatus      String  @default("pending")
+  investmentThesis         String?
+  identityVerified         Boolean @default(false)
+  accreditationDocumentUrl String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -571,6 +606,8 @@ model DealRoom {
   ndaSigned          Boolean @default(false)
   ndaUrl             String?
   videoMeetingStatus String  @default("pending")
+  brokerFlagged      Boolean @default(false)
+  brokerReportReason String?
 
   company  Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   investor User    @relation(fields: [investorId], references: [id], onDelete: Cascade)
@@ -581,4 +618,103 @@ model DealRoom {
   @@unique([companyId, investorId])
   @@index([companyId])
   @@index([investorId])
+}
+
+// =======================
+// Ownership Claim Models
+// =======================
+
+model CompanyOwnershipClaim {
+  id         String @id @default(cuid())
+  companyId  String
+  claimantId String
+
+  status             ClaimStatus              @default(pending)
+  verificationMethod ClaimVerificationMethod?
+
+  // Domain email verification
+  domainEmail      String?
+  domainVerifiedAt DateTime?
+
+  // Document verification
+  authorizationLetterUrl String?
+  governmentIdUrl        String?
+  documentVerifiedAt     DateTime?
+
+  // GST/CIN cross-check
+  submittedGstin String?
+  submittedCin   String?
+  gstNameMatch   Boolean?
+  gstValidatedAt DateTime?
+
+  // Admin review (fallback)
+  adminDecision   String?
+  adminNotes      String?
+  adminReviewedAt DateTime?
+  adminReviewedBy String?
+
+  // Role to grant on approval
+  requestedRole CompanyRoleType @default(owner)
+
+  // Rejection
+  rejectionReason String?
+
+  company  Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  claimant User    @relation("ClaimantClaims", fields: [claimantId], references: [id], onDelete: Cascade)
+
+  domainVerificationToken DomainVerificationToken?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, claimantId])
+  @@index([companyId])
+  @@index([claimantId])
+  @@index([status])
+}
+
+model CompanyRole {
+  id        String          @id @default(cuid())
+  companyId String
+  userId    String
+  role      CompanyRoleType
+
+  grantedBy String?
+  grantedAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, userId])
+  @@index([companyId])
+  @@index([userId])
+}
+
+model DomainVerificationToken {
+  id        String @id @default(cuid())
+  claimId   String @unique
+  email     String
+  otpHash   String
+  expiresAt DateTime
+
+  claim CompanyOwnershipClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model FundingRound {
+  id        String   @id @default(cuid())
+  companyId String
+  stage     String
+  amount    Float
+  date      DateTime
+  investors String[]
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }

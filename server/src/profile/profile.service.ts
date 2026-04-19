@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/profile.dto';
 
@@ -125,6 +125,42 @@ export class ProfileService {
     });
 
     return { avatarUrl };
+  }
+
+  async toggleRole(userId: string, role: 'candidate' | 'company_owner') {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { roles: true },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const hasRole = user.roles.some((r) => r.role === role);
+
+    if (role === 'company_owner' && !hasRole) {
+      if (!user.verified) {
+        throw new ForbiddenException('Only verified users can become company owners');
+      }
+    }
+
+    if (hasRole) {
+      // Remove role (unless it's candidate and they have no other roles?)
+      // For now, just allow removing company_owner
+      if (role === 'company_owner') {
+        await this.prisma.userRole.deleteMany({
+          where: { userId, role },
+        });
+      }
+    } else {
+      // Add role
+      await this.prisma.userRole.upsert({
+        where: { userId_role: { userId, role } },
+        update: {},
+        create: { userId, role },
+      });
+    }
+
+    return this.getMe(userId);
   }
 }
 
