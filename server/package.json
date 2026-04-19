@@ -9,7 +9,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "export NODE_OPTIONS='--max-old-space-size=4096' && npm run prisma:generate && nest build",
+    "build": "npm run prisma:generate && nest build",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "export NODE_OPTIONS='--max-old-space-size=4096' && nest start",
     "start:dev": "export NODE_OPTIONS='--max-old-space-size=4096' && nest start --watch",

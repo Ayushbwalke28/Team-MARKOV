@@ -1,0 +1,100 @@
+import { CompanyVerificationService } from './company-verification.service';
+import { StartCompanyVerificationDto } from './dto/start-company-verification.dto';
+import { UploadDocumentDto } from './dto/upload-document.dto';
+export declare class CompanyVerificationController {
+    private readonly verificationService;
+    constructor(verificationService: CompanyVerificationService);
+    startVerification(req: any, dto: StartCompanyVerificationDto): Promise<{
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+    uploadDocument(req: any, sessionId: string, dto: UploadDocumentDto): Promise<{
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+    submitForAiVerification(req: any, sessionId: string): Promise<{
+        session: {
+            id: string;
+            companyId: string;
+            status: import(".prisma/client").$Enums.VerificationStatus;
+            authorizationLetterUrl: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            registrationDocumentUrl: string | null;
+            incorporationCertUrl: string | null;
+            gstin: string | null;
+            cinNumber: string | null;
+            userId: string;
+            documentType: string | null;
+            apiValidationSuccessful: boolean | null;
+            documentValid: boolean | null;
+            directorsMatched: boolean | null;
+            aiVerificationReason: string | null;
+            aiConfidenceScore: number | null;
+            failureReason: string | null;
+        };
+        aiResult: {
+            verdict: "approved" | "rejected" | "manual_review";
+            reason: string;
+            confidence: number;
+        };
+    }>;
+    getStatus(req: any, sessionId: string): Promise<{
+        company: {
+            verificationStatus: import(".prisma/client").$Enums.CompanyVerificationStatus;
+            gstin: string;
+            cinNumber: string;
+            verifiedAt: Date;
+        };
+        id: string;
+        companyId: string;
+        status: import(".prisma/client").$Enums.VerificationStatus;
+        authorizationLetterUrl: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        registrationDocumentUrl: string | null;
+        incorporationCertUrl: string | null;
+        gstin: string | null;
+        cinNumber: string | null;
+        userId: string;
+        documentType: string | null;
+        apiValidationSuccessful: boolean | null;
+        documentValid: boolean | null;
+        directorsMatched: boolean | null;
+        aiVerificationReason: string | null;
+        aiConfidenceScore: number | null;
+        failureReason: string | null;
+    }>;
+}
